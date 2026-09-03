@@ -1,0 +1,22 @@
+node_modules
+.next
+.git
+.gitignore
+
+# Nunca entram na imagem: são dados reais e credenciais.
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+prisma/dev.db*
+backups/
+.env
+.env.local
+
+importacoes/
+Dockerfile
+docker-compose.yml
+README.md
+INTEGRACAO.md
+DEPLOY.md
+.DS_Store

@@ -1,0 +1,422 @@
+// Korvantis — Gestor de Gastos Empresariais
+//
+// CONVENÇÕES (leia antes de mexer):
+//  1. Dinheiro é SEMPRE Int em CENTAVOS. Nunca Float/Decimal. 0.1+0.2 != 0.3.
+//  2. Percentual é SEMPRE Int em BASIS POINTS (bps). 600 = 6,00%. 1725 = 17,25%.
+//  3. IDs são cuid (String), não autoincrement — evita colisão ao integrar com outro banco.
+//  4. Toda tabela usa prefixo `fin_` no @@map — evita conflito de nomes na integração.
+//  5. Datas: `dataCompetencia` = quando o fato ocorreu (faturamento).
+//            `dataCaixa`       = quando o dinheiro entrou/saiu de fato. null = pendente.
+//     Relatórios escolhem UMA das duas. Nunca somam as duas.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // Para migrar: troque para "postgresql" | "mysql" | "sqlserver" e ajuste DATABASE_URL.
+  // Ver INTEGRACAO.md — nenhum tipo usado aqui é exclusivo do SQLite.
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// CADASTROS
+// ---------------------------------------------------------------------------
+
+model Socio {
+  id                String   @id @default(cuid())
+  nome              String
+  /// É a identidade de login: o magic link só é enviado para e-mail que esteja
+  /// aqui, num sócio ativo. Único porque duas pessoas não podem disputar a
+  /// mesma caixa de entrada.
+  email             String?  @unique
+  /// Participação societária em bps. 3333 = 33,33%. Usado para sugerir rateio.
+  participacaoBps   Int      @default(0)
+  ativo             Boolean  @default(true)
+  criadoEm          DateTime @default(now())
+
+  /// Lançamentos em que este sócio é o SUJEITO: pagou do próprio bolso,
+  /// recebeu distribuição, fez aporte.
+  transacoes        Transacao[]    @relation("SocioDoLancamento")
+  /// Lançamentos que este sócio DIGITOU no sistema. Coisa diferente da de cima:
+  /// quem lança uma despesa raramente é quem a pagou.
+  lancamentosCriados Transacao[]   @relation("AutorDoLancamento")
+  distribuicoes     Distribuicao[]
+  auditoria         Auditoria[]
+
+  @@map("fin_socio")
+}
+
+/// Cadastro simples, no mesmo espírito de Categoria: só o nome.
+/// Não há tela de gestão de projeto — o cliente é o eixo de análise de receita.
+model Cliente {
+  id       String   @id @default(cuid())
+  nome     String   @unique
+  ativo    Boolean  @default(true)
+  criadoEm DateTime @default(now())
+
+  transacoes Transacao[]
+
+  @@index([ativo])
+  @@map("fin_cliente")
+}
+
+model Categoria {
+  id        String   @id @default(cuid())
+  nome      String   @unique
+  /// ENTRADA | SAIDA — restringe onde a categoria aparece nos formulários.
+  natureza  String   @default("SAIDA")
+  /// Marca a categoria usada para lançar guias de imposto. Só uma deve ter true.
+  ehImposto Boolean  @default(false)
+  cor       String   @default("#2eb3c7")
+  ativo     Boolean  @default(true)
+
+  transacoes  Transacao[]
+  recorrentes Recorrente[]
+
+  @@index([natureza])
+  @@map("fin_categoria")
+}
+
+// ---------------------------------------------------------------------------
+// LEDGER — tabela única de movimentação
+// ---------------------------------------------------------------------------
+
+model Transacao {
+  id              String   @id @default(cuid())
+  /// ENTRADA | SAIDA | DISTRIBUICAO | APORTE | TRANSFERENCIA
+  ///
+  /// TRANSFERENCIA é movimento entre bolsos próprios (conta <-> caixinha).
+  /// Aparece no extrato para o histórico bater com o banco, mas NUNCA entra em
+  /// receita, despesa, lucro ou saldo — o saldo em conta é calculado
+  /// descontando o total guardado nas caixinhas. Ver src/lib/queries.ts.
+  tipo            String
+  descricao       String
+  /// Valor BRUTO em centavos, sempre positivo. O sinal vem do `tipo`.
+  valorCentavos   Int
+
+  dataCompetencia DateTime
+  dataCaixa       DateTime?
+
+  clienteId       String?
+  cliente         Cliente?   @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+
+  categoriaId     String?
+  categoria       Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+
+  /// Quem pagou do próprio bolso, ou quem recebeu (em DISTRIBUICAO/APORTE).
+  socioId         String?
+  socio           Socio?     @relation("SocioDoLancamento", fields: [socioId], references: [id], onDelete: SetNull)
+
+  /// Quem DIGITOU este lançamento. Preenchido a partir da sessão.
+  ///
+  /// Nullable por dois motivos: lançamentos anteriores à auditoria (retroagidos
+  /// por script) e a hipótese de o sócio ser removido depois. Perder o autor é
+  /// ruim; impedir a exclusão de um sócio por causa disso seria pior.
+  criadoPorId     String?
+  criadoPor       Socio?     @relation("AutorDoLancamento", fields: [criadoPorId], references: [id], onDelete: SetNull)
+
+  /// Transação que originou esta (ex.: recorrente que gerou o lançamento).
+  origemId        String?
+  origem          Transacao? @relation("Derivadas", fields: [origemId], references: [id], onDelete: SetNull)
+  derivadas       Transacao[] @relation("Derivadas")
+
+  recorrenteId    String?
+  recorrente      Recorrente? @relation(fields: [recorrenteId], references: [id], onDelete: SetNull)
+  /// Competência que este lançamento cobre no recorrente, formato "YYYY-MM".
+  /// Junto com recorrenteId forma a chave de idempotência da materialização.
+  competenciaRef  String?
+
+  /// Impostos provisionados a partir desta receita.
+  impostos        Imposto[]  @relation("ImpostosDaReceita")
+  /// Se esta transação for a SAIDA que quitou uma guia, os impostos quitados.
+  impostosQuitados Imposto[] @relation("PagamentoImposto")
+
+  distribuicao    Distribuicao?
+  /// Preenchido quando esta transação é o espelho de um movimento de caixinha.
+  movimentoCaixinha MovimentoCaixinha?
+
+  /// SHA-256 da linha original do CSV. Bloqueia reimportação duplicada.
+  hashImportacao  String?    @unique
+  importacaoId    String?
+  importacao      Importacao? @relation(fields: [importacaoId], references: [id], onDelete: SetNull)
+
+  observacoes     String?
+  criadoEm        DateTime   @default(now())
+  atualizadoEm    DateTime   @updatedAt
+
+  @@unique([recorrenteId, competenciaRef])
+  @@index([tipo])
+  @@index([dataCompetencia])
+  @@index([dataCaixa])
+  @@index([clienteId])
+  @@index([categoriaId])
+  @@index([criadoPorId])
+  @@map("fin_transacao")
+}
+
+// ---------------------------------------------------------------------------
+// IMPOSTOS (Simples Nacional)
+// ---------------------------------------------------------------------------
+
+model Imposto {
+  id            String   @id @default(cuid())
+
+  receitaId     String
+  receita       Transacao @relation("ImpostosDaReceita", fields: [receitaId], references: [id], onDelete: Cascade)
+
+  /// "DAS" no Simples. Campo livre para suportar outros regimes sem migration.
+  tipo          String   @default("DAS")
+  /// Alíquota efetiva aplicada, em bps. Gravada aqui — mudar a faixa depois
+  /// NÃO reescreve o histórico, que é o comportamento correto.
+  aliquotaBps   Int?
+  valorCentavos Int
+  /// Anexo usado no cálculo ("III" | "V" | null se informado na mão).
+  anexo         String?
+  /// RBT12 (centavos) no momento do cálculo — deixa a conta auditável depois.
+  rbt12Centavos Int?
+
+  /// PROVISIONADO | PAGO | CANCELADO
+  status        String   @default("PROVISIONADO")
+  vencimento    DateTime?
+
+  pagamentoId   String?
+  pagamento     Transacao? @relation("PagamentoImposto", fields: [pagamentoId], references: [id], onDelete: SetNull)
+
+  criadoEm      DateTime @default(now())
+
+  @@index([status])
+  @@index([vencimento])
+  @@index([receitaId])
+  @@map("fin_imposto")
+}
+
+/// Faixas do Simples Nacional. Fica no BANCO, não no código — legislação muda
+/// e você não vai querer recompilar o app por causa disso.
+model FaixaSimples {
+  id                    String @id @default(cuid())
+  /// "III" | "V"
+  anexo                 String
+  faixa                 Int
+  limiteInferiorCentavos Int
+  /// Use um valor bem alto na última faixa em vez de null — simplifica o BETWEEN.
+  limiteSuperiorCentavos Int
+  aliquotaNominalBps    Int
+  deducaoCentavos       Int
+  vigenciaInicio        DateTime @default(now())
+
+  @@unique([anexo, faixa, vigenciaInicio])
+  @@index([anexo])
+  @@map("fin_faixa_simples")
+}
+
+// ---------------------------------------------------------------------------
+// DISTRIBUIÇÃO DE LUCROS
+// ---------------------------------------------------------------------------
+
+model Distribuicao {
+  id            String   @id @default(cuid())
+
+  /// A SAIDA/DISTRIBUICAO correspondente no ledger. 1:1.
+  transacaoId   String   @unique
+  transacao     Transacao @relation(fields: [transacaoId], references: [id], onDelete: Cascade)
+
+  socioId       String
+  socio         Socio    @relation(fields: [socioId], references: [id], onDelete: Restrict)
+
+  /// LUCRO | PRO_LABORE | REEMBOLSO
+  /// Importante: PRO_LABORE entra no Fator R; LUCRO não. Ver src/lib/simples.ts.
+  natureza      String   @default("LUCRO")
+  valorCentavos Int
+  competencia   String   // "YYYY-MM"
+  criadoEm      DateTime @default(now())
+
+  @@index([socioId])
+  @@index([competencia])
+  @@map("fin_distribuicao")
+}
+
+// ---------------------------------------------------------------------------
+// RECORRENTES
+// ---------------------------------------------------------------------------
+
+model Recorrente {
+  id            String   @id @default(cuid())
+  descricao     String
+  /// ENTRADA | SAIDA
+  tipo          String   @default("SAIDA")
+  valorCentavos Int
+
+  categoriaId   String?
+  categoria     Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+
+  /// Dia do mês do vencimento (1-31). Meses curtos usam o último dia.
+  diaVencimento Int      @default(1)
+  inicio        DateTime
+  /// null = sem prazo definido.
+  fim           DateTime?
+  ativo         Boolean  @default(true)
+
+  observacoes   String?
+  criadoEm      DateTime @default(now())
+
+  lancamentos   Transacao[]
+
+  @@index([ativo])
+  @@map("fin_recorrente")
+}
+
+// ---------------------------------------------------------------------------
+// IMPORTAÇÃO CSV
+// ---------------------------------------------------------------------------
+
+model Importacao {
+  id            String   @id @default(cuid())
+  arquivo       String
+  linhasTotal   Int      @default(0)
+  linhasImportadas Int   @default(0)
+  linhasIgnoradas  Int   @default(0)
+  criadoEm      DateTime @default(now())
+
+  transacoes    Transacao[]
+
+  @@map("fin_importacao")
+}
+
+// ---------------------------------------------------------------------------
+// CAIXINHAS
+// ---------------------------------------------------------------------------
+
+/// Bolso separado, no modelo Nubank/Itaú: depositar TIRA da conta corrente e
+/// põe na caixinha. O saldo não é um campo — é sempre a soma dos movimentos.
+///
+/// Guardar campo de saldo aqui seria mais rápido de ler e uma fonte garantida de
+/// divergência: bastaria um movimento gravado sem atualizar o total para o
+/// número mentir para sempre. Somar 20 linhas é barato; auditar um saldo
+/// dessincronizado não é.
+model Caixinha {
+  id            String   @id @default(cuid())
+  nome          String   @unique
+  cor           String   @default("#2eb3c7")
+  /// Chave de um ícone do lucide, resolvida em src/lib/caixinha-icones.ts.
+  icone         String   @default("piggy-bank")
+
+  /// Meta é opcional. Sem meta, a caixinha é só um cofre sem prazo.
+  metaCentavos  Int?
+  metaData      DateTime?
+
+  ativa         Boolean  @default(true)
+  observacoes   String?
+  criadoEm      DateTime @default(now())
+
+  movimentos    MovimentoCaixinha[]
+
+  @@index([ativa])
+  @@map("fin_caixinha")
+}
+
+/// Cada movimento tem 1:1 uma TRANSFERENCIA no ledger, para o extrato do app
+/// ficar completo. A transferência existe só para ser vista — nenhuma agregação
+/// financeira a considera (ver INTEGRACAO.md, invariante 13).
+model MovimentoCaixinha {
+  id            String   @id @default(cuid())
+
+  caixinhaId    String
+  caixinha      Caixinha @relation(fields: [caixinhaId], references: [id], onDelete: Cascade)
+
+  /// DEPOSITO (conta -> caixinha) | RESGATE (caixinha -> conta)
+  tipo          String
+  valorCentavos Int
+  data          DateTime
+  descricao     String?
+
+  transacaoId   String?   @unique
+  transacao     Transacao? @relation(fields: [transacaoId], references: [id], onDelete: SetNull)
+
+  criadoEm      DateTime @default(now())
+
+  @@index([caixinhaId])
+  @@index([data])
+  @@map("fin_caixinha_movimento")
+}
+
+// ---------------------------------------------------------------------------
+// AUTENTICAÇÃO
+// ---------------------------------------------------------------------------
+
+/// Token de uso único do link de acesso.
+///
+/// UMA tabela — não há tabela de usuário nem de sessão. A identidade é o
+/// `fin_socio.email` e a sessão é um cookie assinado, que não precisa ser
+/// guardado em lugar nenhum.
+///
+/// O token vai HASHEADO. Quem ler o banco não consegue montar um link válido,
+/// pelo mesmo motivo que senha não se guarda em claro.
+model TokenAcesso {
+  id        String    @id @default(cuid())
+  email     String
+  /// SHA-256 do token que foi enviado por e-mail.
+  tokenHash String    @unique
+  expiraEm  DateTime
+  /// Preenchido no primeiro uso. É o que torna o link de uso único.
+  usadoEm   DateTime?
+  criadoEm  DateTime  @default(now())
+
+  @@index([email])
+  @@index([expiraEm])
+  @@map("fin_token_acesso")
+}
+
+// ---------------------------------------------------------------------------
+// AUDITORIA
+// ---------------------------------------------------------------------------
+
+/// Trilha append-only: quem fez o quê, quando.
+///
+/// Complementa o `criadoPorId` do lançamento em vez de substituí-lo. O campo no
+/// ledger responde "quem lançou isto?" numa consulta direta, sem join; esta
+/// tabela responde "o que aconteceu no sistema?", incluindo o que não deixa
+/// registro no ledger — guia paga, importação, restauração de backup, troca de
+/// e-mail de acesso.
+///
+/// Nada aqui é editado ou apagado pela aplicação. Uma trilha que pode ser
+/// alterada pelo próprio sistema não serve para auditar o sistema.
+model Auditoria {
+  id            String   @id @default(cuid())
+  quando        DateTime @default(now())
+
+  /// Pode ser null quando o acesso veio pelo AUTH_BOOTSTRAP_EMAIL, ou se o
+  /// sócio for removido depois. Por isso o e-mail também é gravado em texto:
+  /// ele sobrevive à exclusão do cadastro.
+  socioId       String?
+  socio         Socio?   @relation(fields: [socioId], references: [id], onDelete: SetNull)
+  email         String
+
+  /// CRIAR | EXCLUIR | ATUALIZAR | CONFIRMAR | DESFAZER | PAGAR | ESTORNAR
+  /// | IMPORTAR | RESTAURAR | GUARDAR | RESGATAR | ACESSO
+  acao          String
+  /// LANCAMENTO | IMPOSTO | CAIXINHA | SOCIO | CLIENTE | CATEGORIA | RECORRENTE
+  /// | BACKUP | IMPORTACAO
+  entidade      String
+  entidadeId    String?
+
+  /// Frase pronta para a tela. Guardada em vez de montada na leitura porque
+  /// descreve o estado da época — o cliente pode ter sido renomeado depois.
+  resumo        String
+  /// Valor envolvido, quando houver. É o que permite auditar dinheiro sem join.
+  valorCentavos Int?
+
+  @@index([quando])
+  @@index([socioId])
+  @@index([entidade])
+  @@map("fin_auditoria")
+}
+
+/// Chave-valor para parâmetros do app (anexo forçado, categoria de imposto, etc.).
+model Config {
+  chave String @id
+  valor String
+
+  @@map("fin_config")
+}

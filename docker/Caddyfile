@@ -1,0 +1,40 @@
+# Proxy reverso com HTTPS automático.
+#
+# O Caddy pede o certificado ao Let's Encrypt sozinho na primeira subida e
+# renova antes de expirar. Não há passo manual, desde que:
+#
+#   1. o DNS de {$DOMINIO} aponte para o IP desta VPS;
+#   2. as portas 80 e 443 estejam abertas no firewall;
+#   3. no Cloudflare, o registro esteja como "DNS only" (nuvem cinza) —
+#      com o proxy ligado, a Cloudflare intercepta a porta 80 e o desafio
+#      do Let's Encrypt nunca chega aqui.
+
+{
+	email {$EMAIL_ADMIN}
+}
+
+{$DOMINIO} {
+	# `financeops` é o nome do serviço no compose; o Docker resolve pela rede
+	# interna. Nenhuma porta do app fica exposta na internet.
+	reverse_proxy financeops:3000
+
+	encode zstd gzip
+
+	header {
+		# HSTS: uma vez em HTTPS, o navegador se recusa a voltar para HTTP neste
+		# domínio. Importante aqui porque o link de acesso é uma credencial.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Não anuncia o servidor.
+		-Server
+	}
+
+	log {
+		output file /data/acesso.log {
+			roll_size 10mb
+			roll_keep 5
+		}
+	}
+}

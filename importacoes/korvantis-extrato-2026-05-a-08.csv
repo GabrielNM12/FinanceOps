@@ -1,0 +1,23 @@
+data;descricao;valor;tipo;categoria;cliente;socio;natureza;data_caixa;observacoes
+18/06/2026;Rateio GoHighLevel - junho;75,00;APORTE;;;Morôni Lima;;18/06/2026;Pix recebido - cota do sócio para o GoHighLevel
+18/06/2026;Rateio GoHighLevel - junho;75,00;APORTE;;;Bruno Bettiol;;18/06/2026;Pix recebido - cota do sócio para o GoHighLevel
+18/06/2026;Rateio GoHighLevel - junho;75,00;APORTE;;;Uelinton Paula;;18/06/2026;Pix recebido - cota do sócio para o GoHighLevel
+19/06/2026;Rateio GoHighLevel - junho;75,00;APORTE;;;Gabriel Hilamatu;;19/06/2026;Pix recebido - cota do sócio para o GoHighLevel
+27/06/2026;GoHighLevel - repasse a Gabriel Muller (junho);-300,00;SAIDA;Ferramentas;;;;27/06/2026;Repasse do rateio - o pagamento ao GoHighLevel é feito por ele
+10/07/2026;Rateio GoHighLevel - julho;77,37;APORTE;;;Uelinton Paula;;10/07/2026;Pix recebido - cota do sócio para o GoHighLevel
+10/07/2026;Rateio GoHighLevel - julho;77,37;APORTE;;;Gabriel Muller;;10/07/2026;Pix recebido - cota do sócio para o GoHighLevel
+13/07/2026;Rateio GoHighLevel - julho;77,37;APORTE;;;Gabriel Hilamatu;;13/07/2026;Pix recebido - cota do sócio para o GoHighLevel
+16/07/2026;Rateio GoHighLevel - julho;78,00;APORTE;;;Bruno Bettiol;;16/07/2026;Pix recebido - cota do sócio para o GoHighLevel
+23/07/2026;GoHighLevel - repasse a Gabriel Muller (julho);-375,00;SAIDA;Ferramentas;;;;23/07/2026;Repasse do rateio - deixou a conta 64,89 negativa até a entrada do Angeloni
+23/07/2026;Projeto de BI;18000,00;ENTRADA;Projetos;Angeloni;;;23/07/2026;Pix recebido de A ANGELONI CIA LTDA
+29/07/2026;DAS - competência anterior;-577,66;SAIDA;Impostos;;;;29/07/2026;Pix Receita Federal - sem provisão correspondente no sistema
+30/07/2026;Distribuição de lucros - julho;-3706,86;DISTRIBUICAO;;;Gabriel Muller;LUCRO;30/07/2026;
+30/07/2026;Distribuição de lucros - julho;-3706,86;DISTRIBUICAO;;;Uelinton Paula;LUCRO;30/07/2026;
+30/07/2026;Distribuição de lucros - julho;-3706,86;DISTRIBUICAO;;;Morôni Lima;LUCRO;30/07/2026;
+30/07/2026;Distribuição de lucros - julho;-3706,86;DISTRIBUICAO;;;Guilherme Dalmolin;LUCRO;30/07/2026;
+30/07/2026;SFA Contabilidade;-450,00;SAIDA;Contabilidade;;;;30/07/2026;Honorários contábeis
+01/07/2026;Claude Code - julho;-120,00;SAIDA;Ferramentas;;Gabriel Muller;;;Pago do próprio bolso - a reembolsar
+01/07/2026;Claude Code - julho;-120,00;SAIDA;Ferramentas;;Guilherme Dalmolin;;;Pago do próprio bolso - a reembolsar
+01/08/2026;Claude Code - agosto;-120,00;SAIDA;Ferramentas;;Gabriel Muller;;;Pago do próprio bolso - a reembolsar
+01/08/2026;Claude Code - agosto;-120,00;SAIDA;Ferramentas;;Guilherme Dalmolin;;;Pago do próprio bolso - a reembolsar
+12/08/2026;Projeto Importação MESA DSL;5400,00;ENTRADA;Projetos;Angeloni;;;;A receber - confirme a data real de faturamento

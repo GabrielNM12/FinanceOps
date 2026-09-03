@@ -1,0 +1,27 @@
+# Normaliza fim de linha. O repositório é editado no Windows e roda no Linux.
+#
+# Sem isto, cada ida e volta marca dezenas de arquivos como modificados sem que
+# uma linha de código tenha mudado — o `git diff` vira ruído e revisar deixa de
+# funcionar.
+* text=auto eol=lf
+
+# CRÍTICO: script de shell com CRLF não executa no Linux. O erro é
+#
+#     /usr/bin/env: 'bash\r': No such file or directory
+#
+# que não menciona fim de linha em lugar nenhum e custa uma tarde para achar.
+# Vale para o entrypoint do container e para os scripts de deploy.
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker/Caddyfile text eol=lf
+
+# Arquivos .bat e .cmd são o contrário: só funcionam com CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binários: o git não deve tentar converter nada.
+*.png binary
+*.jpg binary
+*.ico binary
+*.db binary
+*.pdf binary

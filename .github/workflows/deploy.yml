@@ -1,0 +1,90 @@
+name: Deploy
+
+# Todo push na main vai para produção — depois de passar pela verificação.
+#
+# Mudanças só de documentação não reconstroem a imagem: são três minutos de
+# build para nada. Elas chegam na VPS no próximo deploy de código, junto.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "LICENSE"
+      - ".gitignore"
+  # Permite disparar à mão pela aba Actions — útil para redeployar sem commit,
+  # ou para levar uma mudança de documentação quando fizer diferença.
+  workflow_dispatch:
+
+# Dois deploys ao mesmo tempo brigariam pelo mesmo diretório e pelo mesmo
+# container. `cancel-in-progress: false` é deliberado: cancelar um deploy no
+# meio deixa a VPS num estado que ninguém pediu.
+concurrency:
+  group: deploy-producao
+  cancel-in-progress: false
+
+jobs:
+  verificar:
+    name: Verificar
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      # `npm ci` em vez de `npm install`: instala exatamente o package-lock, sem
+      # resolver versões de novo. É o que faz o CI testar o mesmo que a imagem.
+      - name: Instalar dependências
+        run: npm ci
+
+      # O schema exige DATABASE_URL até para gerar o client. O valor não importa
+      # aqui — nada toca banco na verificação.
+      - name: Gerar o client do Prisma
+        run: npx prisma generate
+        env:
+          DATABASE_URL: "file:./ci.db"
+
+      # Primeiro os testes: são segundos, e são eles que pegam erro de cálculo.
+      # Um build que compila com a alíquota errada passa despercebido.
+      - name: Testes
+        run: npm test
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+        env:
+          DATABASE_URL: "file:./ci.db"
+          NEXT_TELEMETRY_DISABLED: "1"
+
+  publicar:
+    name: Publicar na VPS
+    needs: verificar
+    runs-on: self-hosted
+    timeout-minutes: 20
+
+    steps:
+      # Sem `actions/checkout`: o diretório de trabalho do runner não é o mesmo
+      # que roda em produção. Quem se atualiza é o clone em ~/financeops, que é
+      # onde vivem o .env e o docker-compose com os volumes de verdade.
+      - name: Deploy
+        run: |
+          set -euo pipefail
+          cd ~/financeops
+          test -x docker/deploy-ci.sh || chmod +x docker/deploy-ci.sh
+          ./docker/deploy-ci.sh
+
+      # Roda mesmo se o passo acima falhar: quando o deploy quebra, o log do
+      # container é a primeira coisa que alguém vai querer ver, e ele fica aqui
+      # em vez de exigir um SSH.
+      - name: Log do app
+        if: always()
+        run: |
+          cd ~/financeops
+          docker compose ps
+          docker compose logs --tail 30 financeops

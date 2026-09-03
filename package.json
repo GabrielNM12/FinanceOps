@@ -1,0 +1,56 @@
+{
+  "name": "financeops",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FinanceOps — gestão financeira da Korvantis",
+  "scripts": {
+    "tudo": "npm install && npm run setup && npm run build && npm start",
+    "predev": "node scripts/preparar-env.mjs",
+    "dev": "next dev",
+    "prebuild": "node scripts/preparar-env.mjs",
+    "build": "prisma generate && next build",
+    "prestart": "node scripts/preparar-env.mjs",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "predb:push": "node scripts/preparar-env.mjs",
+    "db:push": "prisma db push",
+    "predb:seed": "node scripts/preparar-env.mjs",
+    "db:seed": "tsx prisma/seed.ts",
+    "predb:studio": "node scripts/preparar-env.mjs",
+    "db:studio": "prisma studio",
+    "predb:reset": "node scripts/preparar-env.mjs",
+    "db:reset": "prisma db push --force-reset && npm run db:seed",
+    "presetup": "node scripts/preparar-env.mjs",
+    "setup": "prisma generate && prisma db push && npm run db:seed",
+    "test": "tsx src/lib/__tests__/run.ts",
+    "predb:backup": "node scripts/preparar-env.mjs",
+    "db:backup": "tsx scripts/backup.ts",
+    "preauth:diagnostico": "node scripts/preparar-env.mjs",
+    "auth:diagnostico": "node scripts/diagnostico-email.mjs"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "lucide-react": "^0.460.0",
+    "next": "14.2.35",
+    "nodemailer": "^7.0.9",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.13.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "@types/nodemailer": "^7.0.4",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "prisma": "^5.22.0",
+    "tailwindcss": "^3.4.15",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

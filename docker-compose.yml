@@ -1,0 +1,101 @@
+services:
+  financeops:
+    build: .
+    image: financeops:latest
+    container_name: financeops
+    restart: unless-stopped
+
+    # Sem `ports`: o app NÃO é acessível de fora, só pela rede interna do
+    # compose. Quem fala com a internet é o Caddy, que também termina o TLS.
+    # Publicar 3000 no host deixaria uma porta em HTTP puro aberta ao lado do
+    # HTTPS, e o link de acesso trafega nessa conexão.
+    expose:
+      - "3000"
+
+    environment:
+      # O banco vive no volume, não na imagem. Trocar a versão do app não toca
+      # nos dados.
+      DATABASE_URL: "file:/dados/financeops.db"
+
+      # URL pública. O link do e-mail é montado a partir daqui — se estiver
+      # errada, o e-mail chega com um endereço que não abre.
+      APP_URL: "https://${DOMINIO:?defina DOMINIO no .env, ex: financeops.korvantis.io}"
+
+      # Assina o cookie de sessão.
+      AUTH_SECRET: "${AUTH_SECRET:?gere com: openssl rand -base64 32}"
+
+      # SMTP do remetente. Gmail/Workspace: senha de app, 16 caracteres, sem espaços.
+      SMTP_HOST: "${SMTP_HOST:?defina SMTP_HOST}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_USER: "${SMTP_USER:-}"
+      SMTP_PASS: "${SMTP_PASS:-}"
+      EMAIL_FROM: "${EMAIL_FROM:?defina EMAIL_FROM, ex: FinanceOps <financeops@korvantis.io>}"
+
+      # Acesso de emergência para a primeira entrada. REMOVA depois de cadastrar
+      # os e-mails dos sócios.
+      AUTH_BOOTSTRAP_EMAIL: "${AUTH_BOOTSTRAP_EMAIL:-}"
+
+      # Modo demonstracao: SEM LOGIN. Vazio = desligado, que e o certo em
+      # producao. Ver src/lib/modo-demo.ts antes de ligar.
+      MODO_DEMO: "${MODO_DEMO:-}"
+
+      # Backup dentro do volume, para sair junto com os dados.
+      BACKUP_DIR: "/dados/backups"
+
+      TZ: "America/Sao_Paulo"
+
+    volumes:
+      - financeops-dados:/dados
+
+    healthcheck:
+      # Bate numa rota pública: /login responde sem sessão. Apontar para uma
+      # rota protegida faria o healthcheck ver 307 e julgar o app doente.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/login"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: financeops-caddy
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    environment:
+      DOMINIO: "${DOMINIO:?defina DOMINIO no .env}"
+      # Usado pelo Let's Encrypt para avisar sobre expiração e problemas.
+      EMAIL_ADMIN: "${EMAIL_ADMIN:-${SMTP_USER}}"
+
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Guarda os certificados. Sem este volume, cada `docker compose up` pede
+      # um certificado novo — e o Let's Encrypt limita a 5 por semana e domínio.
+      - caddy-dados:/data
+      - caddy-config:/config
+
+    depends_on:
+      - financeops
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  financeops-dados:
+    name: financeops-dados
+  caddy-dados:
+    name: financeops-caddy-dados
+  caddy-config:
+    name: financeops-caddy-config

@@ -1,0 +1,58 @@
+# FinanceOps atrás de um proxy que JÁ EXISTE na máquina.
+#
+# QUANDO USAR ESTE ARQUIVO EM VEZ DO docker-compose.yml
+#
+# O `docker-compose.yml` sobe o app e um Caddy próprio, que toma as portas 80 e
+# 443. Isso só funciona se a máquina for exclusiva do FinanceOps. Se já houver
+# outro proxy servindo outros sites — e só um processo pode escutar a 443 —
+# subir um segundo Caddy falha com:
+#
+#     Bind for 0.0.0.0:80 failed: port is already allocated
+#
+# Aqui o app entra como mais um site do proxy existente: sem Caddy próprio, sem
+# porta publicada, apenas o container plugado na rede do proxy.
+#
+# COMO USAR
+#
+#   1. Descubra a rede do proxy existente:
+#        docker inspect NOME_DO_PROXY -f '{{range $k,$v := .NetworkSettings.Networks}}{{$k}}{{"\n"}}{{end}}'
+#
+#   2. No .env:
+#        COMPOSE_FILE=docker-compose.proxy.yml
+#        REDE_PROXY=nome_da_rede_do_passo_1
+#
+#      Com COMPOSE_FILE no .env, o comando continua sendo `docker compose up -d`
+#      — nada de lembrar de passar `-f` toda vez.
+#
+#   3. No Caddyfile do proxy existente, adicione:
+#        financeops.korvantis.io {
+#          reverse_proxy financeops:3000
+#        }
+#
+#      O `financeops` é resolvido pelo DNS interno do Docker, porque os dois
+#      containers compartilham a rede. O TLS é responsabilidade do proxy.
+
+services:
+  financeops:
+    # Herda a definição inteira do arquivo principal: imagem, variáveis,
+    # volume, healthcheck. Duplicar aqui garantiria divergência na primeira
+    # alteração que alguém esquecesse de replicar.
+    extends:
+      file: docker-compose.yml
+      service: financeops
+
+    networks:
+      # A rede própria continua existindo para o caso de o app ganhar
+      # dependências (Postgres, Redis) sem expô-las ao resto da máquina.
+      - default
+      # É por aqui que o proxy alcança o app.
+      - proxy
+
+volumes:
+  financeops-dados:
+    name: financeops-dados
+
+networks:
+  proxy:
+    external: true
+    name: "${REDE_PROXY:?defina REDE_PROXY no .env com a rede do proxy existente}"

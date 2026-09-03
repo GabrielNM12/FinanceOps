@@ -1,0 +1,21 @@
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Banco local — contém dados financeiros reais. NUNCA commitar.
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+prisma/dev.db*
+
+# Exportações e backups
+exports/
+backups/
+
+.env
+.env.local
+.DS_Store
