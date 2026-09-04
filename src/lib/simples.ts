@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { janelaRBT12, competenciaDe, dataUTC } from "./datas";
+import { t } from "@/lib/i18n";
 import {
   Anexo,
   LIMITE_FATOR_R_BPS,
@@ -128,7 +129,7 @@ export async function calcularAliquota(
     orderBy: { faixa: "asc" },
   });
   if (faixas.length === 0) {
-    throw new Error(`Faixas do Anexo ${anexo} não cadastradas. Rode "npm run db:seed".`);
+    throw new Error(t.simples.faixasNaoCadastradas(anexo));
   }
 
   if (rbt12 <= 0) {
@@ -150,10 +151,7 @@ export async function calcularAliquota(
     ) ?? ultima;
 
   const aviso =
-    rbt12 > ultima.limiteSuperiorCentavos
-      ? "RBT12 acima do teto do Simples. A empresa provavelmente foi desenquadrada — " +
-        "a alíquota abaixo é só uma extrapolação da última faixa. Fale com o contador."
-      : undefined;
+    rbt12 > ultima.limiteSuperiorCentavos ? t.simples.rbt12AcimaTeto : undefined;
 
   return {
     aliquotaBps: aliquotaEfetivaPura(rbt12, faixa.aliquotaNominalBps, faixa.deducaoCentavos),

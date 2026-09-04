@@ -10,6 +10,7 @@ import {
 import { useDados } from "@/hooks/useDados";
 import { formatarCompetencia } from "@/lib/datas";
 import { formatarBRL, formatarBps } from "@/lib/money";
+import { t } from "@/lib/i18n";
 
 type Dados = {
   mesAtual: string;
@@ -43,10 +44,7 @@ export default function ImpostosPage() {
     useDados<Dados>("/api/ui/impostos");
 
   const cabecalho = (
-    <PageTitle
-      titulo="Impostos"
-      descricao="Provisões geradas por receita e guias efetivamente pagas."
-    />
+    <PageTitle titulo={t.taxes.title} descricao={t.taxes.subtitle} />
   );
 
   if (erro) {
@@ -76,38 +74,41 @@ export default function ImpostosPage() {
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         <Kpi
-          titulo="Sobre receita recebida"
+          titulo={t.taxes.kpiSobreRecebida}
           valorCentavos={totais.sobreRecebidoCentavos}
-          detalhe="É o que reduz o caixa livre"
+          detalhe={t.taxes.kpiSobreRecebidaDetalhe}
           tom="alerta"
           destaque
         />
         <Kpi
-          titulo="Sobre a receber"
+          titulo={t.taxes.kpiSobreAReceber}
           valorCentavos={totais.sobreAReceberCentavos}
-          detalhe={`${totais.qtdSobreAReceber} guia(s) sem lastro em caixa`}
+          detalhe={t.taxes.kpiSobreAReceberDetalhe(totais.qtdSobreAReceber)}
         />
         <Kpi
-          titulo="Vencido"
+          titulo={t.taxes.kpiVencido}
           valorCentavos={totais.vencidoCentavos}
-          detalhe={`${totais.qtdVencido} guia(s) em atraso`}
+          detalhe={t.taxes.kpiVencidoDetalhe(totais.qtdVencido)}
           tom={totais.vencidoCentavos > 0 ? "negativo" : "neutro"}
         />
         <Kpi
-          titulo={`DAS estimado — ${formatarCompetencia(dados.mesAtual)}`}
+          titulo={t.taxes.kpiDasEstimado(formatarCompetencia(dados.mesAtual))}
           valorCentavos={dados.projecao.dasCentavos}
-          detalhe={`Sobre ${formatarBRL(dados.projecao.receitaCentavos)} faturados`}
+          detalhe={t.taxes.kpiDasEstimadoDetalhe(formatarBRL(dados.projecao.receitaCentavos))}
         />
         <div className="card p-4">
           <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Alíquota vigente
+            {t.taxes.aliquotaVigente}
           </div>
           <div className="num mt-1 text-2xl font-semibold text-navy-900">
             {formatarBps(calc.aliquotaBps)}
           </div>
           <div className="mt-1 text-xs text-slate-500">
-            Anexo {calc.anexo}, faixa {calc.faixa} — nominal{" "}
-            {formatarBps(calc.aliquotaNominalBps)}
+            {t.taxes.aliquotaVigenteDetalhe(
+              calc.anexo,
+              calc.faixa,
+              formatarBps(calc.aliquotaNominalBps)
+            )}
           </div>
         </div>
       </div>
@@ -122,27 +123,29 @@ export default function ImpostosPage() {
         <div className="mb-6">
           <Aviso tom="erro">
             <strong>
-              {dados.risco.quantidade} guia(s) somando{" "}
-              {formatarBRL(dados.risco.totalCentavos)}
+              {t.taxes.riscoStrong(
+                dados.risco.quantidade,
+                formatarBRL(dados.risco.totalCentavos)
+              )}
             </strong>{" "}
-            vencem nos próximos 15 dias e são de receita que ainda não foi recebida.
-            O DAS vence pelo faturamento, não pelo recebimento — se o cliente não
-            pagar antes, esse valor sai do caixa mesmo assim. Cobre o cliente ou
-            garanta o saldo.
+            {t.taxes.risco}
           </Aviso>
         </div>
       )}
 
       <div className="mb-6">
         <Aviso tom="info">
-          A alíquota efetiva sai de{" "}
+          {t.taxes.formulaPre}{" "}
           <span className="num">
-            (RBT12 × {formatarBps(calc.aliquotaNominalBps)} −{" "}
-            {formatarBRL(calc.deducaoCentavos)}) ÷ RBT12
+            {t.taxes.formula(
+              formatarBps(calc.aliquotaNominalBps),
+              formatarBRL(calc.deducaoCentavos)
+            )}
           </span>
-          , com RBT12 de {formatarBRL(calc.rbt12Centavos)}. O anexo vem do Fator R
-          atual ({dados.fatorRBps === null ? "—" : formatarBps(dados.fatorRBps)}).
-          Confira as faixas em Configurações antes de fechar o mês.
+          {t.taxes.formulaPos(
+            formatarBRL(calc.rbt12Centavos),
+            dados.fatorRBps === null ? "—" : formatarBps(dados.fatorRBps)
+          )}
         </Aviso>
       </div>
 

@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useEffect, useRef } from "react";
 import { formatarBRL, formatarBps } from "@/lib/money";
+import { t } from "@/lib/i18n";
 import {
   TrendingUp,
   TrendingDown,
@@ -30,10 +31,10 @@ type Props = {
 };
 
 const ABAS = [
-  { id: "receita", label: "Receita", Icone: TrendingUp },
-  { id: "despesa", label: "Despesa", Icone: TrendingDown },
-  { id: "distribuicao", label: "Distribuição / Pró-labore", Icone: Users },
-  { id: "aporte", label: "Aporte", Icone: Landmark },
+  { id: "receita", label: t.forms.abaReceita, Icone: TrendingUp },
+  { id: "despesa", label: t.forms.abaDespesa, Icone: TrendingDown },
+  { id: "distribuicao", label: t.forms.abaDistribuicao, Icone: Users },
+  { id: "aporte", label: t.forms.abaAporte, Icone: Landmark },
 ] as const;
 
 type Aba = (typeof ABAS)[number]["id"];
@@ -56,7 +57,7 @@ export default function FormLancamento(props: Props) {
         className="flex w-full items-center justify-between px-5 py-3 text-left"
       >
         <span className="text-sm font-semibold text-navy-900">
-          {aberto ? "Fechar formulário" : "Novo lançamento"}
+          {aberto ? t.forms.fecharFormulario : t.forms.novoLancamento}
         </span>
         <span className="text-slate-400">
           {aberto ? <Minus size={16} /> : <Plus size={16} />}
@@ -111,7 +112,7 @@ function Acoes({ pendente, label }: { pendente: boolean; label: string }) {
   return (
     <div className="mt-5 flex justify-end">
       <button type="submit" disabled={pendente} className="btn-teal">
-        {pendente ? "Salvando..." : label}
+        {pendente ? t.forms.salvando : label}
       </button>
     </div>
   );
@@ -173,26 +174,26 @@ function FormReceita({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <label className="label">Descrição</label>
-          <input name="descricao" required className="input" placeholder="NF 042 — Sprint de agosto" />
+          <label className="label">{t.forms.descricao}</label>
+          <input name="descricao" required className="input" placeholder={t.forms.phReceita} />
         </div>
 
         <div>
-          <label className="label">Valor bruto</label>
+          <label className="label">{t.forms.valorBruto}</label>
           <input
             name="valor"
             required
             className="input"
-            placeholder="15.000,00"
+            placeholder={t.forms.phValorReceita}
             value={valor}
             onChange={(e) => setValor(e.target.value)}
           />
         </div>
 
         <div>
-          <label className="label">Cliente</label>
+          <label className="label">{t.forms.cliente}</label>
           <select name="clienteId" className="input">
-            <option value="">— sem cliente —</option>
+            <option value="">{t.forms.semCliente}</option>
             {clientes.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.nome}
@@ -202,7 +203,7 @@ function FormReceita({
         </div>
 
         <div>
-          <label className="label">Categoria</label>
+          <label className="label">{t.forms.categoria}</label>
           <select name="categoriaId" className="input">
             <option value="">—</option>
             {categoriasEntrada.map((c) => (
@@ -214,7 +215,7 @@ function FormReceita({
         </div>
 
         <div>
-          <label className="label">Data de faturamento</label>
+          <label className="label">{t.forms.dataFaturamento}</label>
           <input
             type="date"
             name="dataCompetencia"
@@ -226,15 +227,13 @@ function FormReceita({
         </div>
 
         <div>
-          <label className="label">Data de recebimento</label>
+          <label className="label">{t.forms.dataRecebimento}</label>
           <input type="date" name="dataCaixa" className="input" />
-          <p className="mt-1 text-xs text-slate-400">
-            Deixe vazio se ainda não recebeu — entra como &quot;a receber&quot;.
-          </p>
+          <p className="mt-1 text-xs text-slate-400">{t.forms.aReceberHint}</p>
         </div>
 
         <div className="lg:col-span-2">
-          <label className="label">Observações</label>
+          <label className="label">{t.forms.observacoes}</label>
           <input name="observacoes" className="input" />
         </div>
       </div>
@@ -243,7 +242,7 @@ function FormReceita({
       <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-sm font-semibold text-navy-900">
-            Imposto (Simples Nacional)
+            {t.forms.impostoBloco}
           </span>
           <label className="flex items-center gap-2 text-sm text-slate-600">
             <input
@@ -252,7 +251,7 @@ function FormReceita({
               checked={semImposto}
               onChange={(e) => setSemImposto(e.target.checked)}
             />
-            Receita sem incidência
+            {t.forms.semIncidencia}
           </label>
         </div>
 
@@ -261,27 +260,25 @@ function FormReceita({
             {preview?.ok ? (
               <>
                 <div className="mt-4 grid gap-3 sm:grid-cols-4">
-                  <Numero titulo="Bruto" valor={formatarBRL(preview.impostoCentavos + preview.liquidoCentavos)} />
+                  <Numero titulo={t.forms.numBruto} valor={formatarBRL(preview.impostoCentavos + preview.liquidoCentavos)} />
                   <Numero
-                    titulo={`Alíquota (Anexo ${preview.anexo}, faixa ${preview.faixa})`}
+                    titulo={t.forms.numAliquota(preview.anexo, preview.faixa)}
                     valor={formatarBps(preview.aliquotaBps)}
                   />
                   <Numero
-                    titulo="Imposto"
+                    titulo={t.forms.numImposto}
                     valor={formatarBRL(preview.impostoCentavos)}
                     tom="negativo"
                   />
                   <Numero
-                    titulo="Líquido"
+                    titulo={t.forms.numLiquido}
                     valor={formatarBRL(preview.liquidoCentavos)}
                     tom="positivo"
                   />
                 </div>
 
                 <p className="mt-3 text-xs text-slate-500">
-                  Calculado sobre um RBT12 de {formatarBRL(preview.rbt12Centavos)}. A
-                  guia vence no dia 20 do mês seguinte e fica provisionada até você
-                  registrar o pagamento.
+                  {t.forms.impostoNota(formatarBRL(preview.rbt12Centavos))}
                 </p>
 
                 {preview.aviso && (
@@ -295,13 +292,13 @@ function FormReceita({
                   onClick={() => setEditarImposto((v) => !v)}
                   className="mt-3 text-xs text-teal-700 underline"
                 >
-                  {editarImposto ? "Usar o cálculo automático" : "Ajustar manualmente"}
+                  {editarImposto ? t.forms.usarAutomatico : t.forms.ajustarManual}
                 </button>
 
                 {editarImposto && (
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="label">Alíquota (%)</label>
+                      <label className="label">{t.forms.aliquotaPct}</label>
                       <input
                         name="impostoAliquota"
                         className="input"
@@ -309,27 +306,25 @@ function FormReceita({
                       />
                     </div>
                     <div>
-                      <label className="label">Ou valor do imposto</label>
-                      <input name="impostoValor" className="input" placeholder="0,00" />
+                      <label className="label">{t.forms.ouValorImposto}</label>
+                      <input name="impostoValor" className="input" placeholder={t.forms.phImpostoValor} />
                     </div>
                     <p className="text-xs text-slate-500 sm:col-span-2">
-                      Se preencher o valor, ele prevalece sobre a alíquota.
+                      {t.forms.valorPrevalece}
                     </p>
                   </div>
                 )}
               </>
             ) : (
               <p className="mt-3 text-sm text-slate-500">
-                {preview && !preview.ok
-                  ? preview.erro
-                  : "Informe o valor para ver a alíquota e o líquido."}
+                {preview && !preview.ok ? preview.erro : t.forms.informeValor}
               </p>
             )}
           </>
         )}
       </div>
 
-      <Acoes pendente={pendente} label="Registrar receita" />
+      <Acoes pendente={pendente} label={t.forms.registrarReceita} />
     </form>
   );
 }
@@ -390,17 +385,17 @@ function FormDespesa({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <label className="label">Descrição</label>
-          <input name="descricao" required className="input" placeholder="AWS — agosto" />
+          <label className="label">{t.forms.descricao}</label>
+          <input name="descricao" required className="input" placeholder={t.forms.phDespesa} />
         </div>
 
         <div>
-          <label className="label">Valor</label>
-          <input name="valor" required className="input" placeholder="1.240,90" />
+          <label className="label">{t.forms.valor}</label>
+          <input name="valor" required className="input" placeholder={t.forms.phValorDespesa} />
         </div>
 
         <div>
-          <label className="label">Categoria</label>
+          <label className="label">{t.forms.categoria}</label>
           <select name="categoriaId" className="input">
             <option value="">—</option>
             {categoriasSaida.map((c) => (
@@ -412,37 +407,33 @@ function FormDespesa({
         </div>
 
         <div>
-          <label className="label">Cliente (opcional)</label>
+          <label className="label">{t.forms.clienteOpcional}</label>
           <select name="clienteId" className="input">
-            <option value="">— despesa geral —</option>
+            <option value="">{t.forms.despesaGeral}</option>
             {clientes.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.nome}
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-slate-400">
-            Vincular a um cliente habilita o cálculo de margem.
-          </p>
+          <p className="mt-1 text-xs text-slate-400">{t.forms.margemHint}</p>
         </div>
 
         <div>
-          <label className="label">Pago por</label>
+          <label className="label">{t.forms.pagoPor}</label>
           <select name="socioId" className="input">
-            <option value="">Empresa</option>
+            <option value="">{t.forms.empresa}</option>
             {socios.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.nome} (do próprio bolso)
+                {t.forms.doProprioBolso(s.nome)}
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-slate-400">
-            Marque o sócio quando ele adiantou do próprio bolso.
-          </p>
+          <p className="mt-1 text-xs text-slate-400">{t.forms.bolsoHint}</p>
         </div>
 
         <div>
-          <label className="label">Data da despesa</label>
+          <label className="label">{t.forms.dataDespesa}</label>
           <input
             type="date"
             name="dataCompetencia"
@@ -453,18 +444,18 @@ function FormDespesa({
         </div>
 
         <div>
-          <label className="label">Data do pagamento</label>
+          <label className="label">{t.forms.dataPagamento}</label>
           <input type="date" name="dataCaixa" className="input" defaultValue={hoje()} />
-          <p className="mt-1 text-xs text-slate-400">Vazio = ainda não pago.</p>
+          <p className="mt-1 text-xs text-slate-400">{t.forms.naoPagoHint}</p>
         </div>
 
         <div className="lg:col-span-3">
-          <label className="label">Observações</label>
+          <label className="label">{t.forms.observacoes}</label>
           <input name="observacoes" className="input" />
         </div>
       </div>
 
-      <Acoes pendente={pendente} label="Registrar despesa" />
+      <Acoes pendente={pendente} label={t.forms.registrarDespesa} />
     </form>
   );
 }
@@ -478,12 +469,9 @@ function FormDistribuicao({ socios, onOk }: Props & { onOk: () => void }) {
   const form = useRef<HTMLFormElement>(null);
 
   const explicacao: Record<string, string> = {
-    LUCRO:
-      "Não é despesa da empresa e não conta no Fator R. É a destinação do lucro já apurado.",
-    PRO_LABORE:
-      "É despesa da empresa e CONTA no Fator R — é o que pode levar vocês ao Anexo III. Tem encargos próprios (INSS/IRRF) que não são calculados aqui.",
-    REEMBOLSO:
-      "Devolução de dinheiro que o sócio adiantou. Não é despesa nova — a despesa original já foi lançada quando ele pagou.",
+    LUCRO: t.forms.natExplicaLucro,
+    PRO_LABORE: t.forms.natExplicaProLabore,
+    REEMBOLSO: t.forms.natExplicaReembolso,
   };
 
   return (
@@ -508,9 +496,9 @@ function FormDistribuicao({ socios, onOk }: Props & { onOk: () => void }) {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
-          <label className="label">Sócio</label>
+          <label className="label">{t.forms.socio}</label>
           <select name="socioId" required className="input">
-            <option value="">Selecione...</option>
+            <option value="">{t.forms.selecione}</option>
             {socios.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.nome}
@@ -520,26 +508,26 @@ function FormDistribuicao({ socios, onOk }: Props & { onOk: () => void }) {
         </div>
 
         <div>
-          <label className="label">Natureza</label>
+          <label className="label">{t.forms.natureza}</label>
           <select
             name="natureza"
             className="input"
             value={natureza}
             onChange={(e) => setNatureza(e.target.value)}
           >
-            <option value="LUCRO">Distribuição de lucros</option>
-            <option value="PRO_LABORE">Pró-labore</option>
-            <option value="REEMBOLSO">Reembolso</option>
+            <option value="LUCRO">{t.forms.natLucro}</option>
+            <option value="PRO_LABORE">{t.forms.natProLabore}</option>
+            <option value="REEMBOLSO">{t.forms.natReembolso}</option>
           </select>
         </div>
 
         <div>
-          <label className="label">Valor</label>
-          <input name="valor" required className="input" placeholder="5.000,00" />
+          <label className="label">{t.forms.valor}</label>
+          <input name="valor" required className="input" placeholder={t.forms.phValorDistribuicao} />
         </div>
 
         <div>
-          <label className="label">Competência</label>
+          <label className="label">{t.forms.competencia}</label>
           <input
             type="date"
             name="dataCompetencia"
@@ -550,12 +538,12 @@ function FormDistribuicao({ socios, onOk }: Props & { onOk: () => void }) {
         </div>
 
         <div>
-          <label className="label">Data do pagamento</label>
+          <label className="label">{t.forms.dataPagamento}</label>
           <input type="date" name="dataCaixa" className="input" defaultValue={hoje()} />
         </div>
 
         <div>
-          <label className="label">Descrição (opcional)</label>
+          <label className="label">{t.forms.descricaoOpcional}</label>
           <input name="descricao" className="input" />
         </div>
       </div>
@@ -564,7 +552,7 @@ function FormDistribuicao({ socios, onOk }: Props & { onOk: () => void }) {
         {explicacao[natureza]}
       </p>
 
-      <Acoes pendente={pendente} label="Registrar" />
+      <Acoes pendente={pendente} label={t.forms.registrar} />
     </form>
   );
 }
@@ -598,11 +586,11 @@ function FormAporte({ socios, onOk }: Props & { onOk: () => void }) {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="lg:col-span-2">
-          <label className="label">Descrição</label>
-          <input name="descricao" className="input" placeholder="Aporte de capital" />
+          <label className="label">{t.forms.descricao}</label>
+          <input name="descricao" className="input" placeholder={t.forms.phAporte} />
         </div>
         <div>
-          <label className="label">Sócio</label>
+          <label className="label">{t.forms.socio}</label>
           <select name="socioId" className="input">
             <option value="">—</option>
             {socios.map((s) => (
@@ -613,11 +601,11 @@ function FormAporte({ socios, onOk }: Props & { onOk: () => void }) {
           </select>
         </div>
         <div>
-          <label className="label">Valor</label>
+          <label className="label">{t.forms.valor}</label>
           <input name="valor" required className="input" />
         </div>
         <div>
-          <label className="label">Data</label>
+          <label className="label">{t.forms.data}</label>
           <input
             type="date"
             name="dataCompetencia"
@@ -628,12 +616,9 @@ function FormAporte({ socios, onOk }: Props & { onOk: () => void }) {
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-slate-500">
-        Aporte entra no caixa mas não é receita — não gera imposto e não aparece
-        como faturamento.
-      </p>
+      <p className="mt-4 text-xs text-slate-500">{t.forms.aporteHint}</p>
 
-      <Acoes pendente={pendente} label="Registrar aporte" />
+      <Acoes pendente={pendente} label={t.forms.registrarAporte} />
     </form>
   );
 }

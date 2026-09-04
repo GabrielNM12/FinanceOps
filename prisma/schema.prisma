@@ -71,6 +71,7 @@ model Categoria {
   ehImposto Boolean  @default(false)
   cor       String   @default("#2eb3c7")
   ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
 
   transacoes  Transacao[]
   recorrentes Recorrente[]

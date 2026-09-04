@@ -10,6 +10,7 @@ import {
 } from "@/components/Esqueleto";
 import { useDados } from "@/hooks/useDados";
 import { verboDe, rotuloEntidade, corDaAcao, ACOES, ENTIDADES } from "@/lib/auditoria-formato";
+import { intlLocale, t } from "@/lib/i18n";
 
 type Registro = {
   id: string;
@@ -33,7 +34,7 @@ type Dados = {
   porPessoa: { nome: string; quantidade: number }[];
 };
 
-const AGORA = new Intl.DateTimeFormat("pt-BR", {
+const AGORA = new Intl.DateTimeFormat(intlLocale, {
   day: "2-digit",
   month: "2-digit",
   year: "2-digit",
@@ -55,10 +56,7 @@ export default function AuditoriaPage() {
   );
 
   const cabecalho = (
-    <PageTitle
-      titulo="Auditoria"
-      descricao="Quem fez o quê, e quando. Registro só de leitura."
-    />
+    <PageTitle titulo={t.audit.title} descricao={t.audit.subtitle} />
   );
 
   if (erro) {
@@ -102,13 +100,13 @@ export default function AuditoriaPage() {
 
       <div className="card mb-4 flex flex-wrap items-end gap-3 p-4">
         <div className="min-w-[160px] flex-1">
-          <label className="label">Pessoa</label>
+          <label className="label">{t.audit.filtroPessoa}</label>
           <select
             value={socio}
             onChange={(e) => setSocio(e.target.value)}
             className="input"
           >
-            <option value="">Todas</option>
+            <option value="">{t.common.all_f}</option>
             {dados.socios.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.nome}
@@ -117,13 +115,13 @@ export default function AuditoriaPage() {
           </select>
         </div>
         <div className="min-w-[150px] flex-1">
-          <label className="label">Onde</label>
+          <label className="label">{t.audit.filtroOnde}</label>
           <select
             value={entidade}
             onChange={(e) => setEntidade(e.target.value)}
             className="input"
           >
-            <option value="">Tudo</option>
+            <option value="">{t.common.everything}</option>
             {ENTIDADES.map((e) => (
               <option key={e} value={e}>
                 {rotuloEntidade(e)}
@@ -132,9 +130,9 @@ export default function AuditoriaPage() {
           </select>
         </div>
         <div className="min-w-[150px] flex-1">
-          <label className="label">Ação</label>
+          <label className="label">{t.audit.filtroAcao}</label>
           <select value={acao} onChange={(e) => setAcao(e.target.value)} className="input">
-            <option value="">Todas</option>
+            <option value="">{t.common.all_f}</option>
             {ACOES.map((a) => (
               <option key={a} value={a}>
                 {verboDe(a)}
@@ -151,17 +149,13 @@ export default function AuditoriaPage() {
             }}
             className="flex items-center gap-1 py-2 text-sm text-slate-500 underline"
           >
-            <X size={13} /> limpar
+            <X size={13} /> {t.common.clear}
           </button>
         )}
       </div>
 
       {dados.registros.length === 0 ? (
-        <Vazio>
-          {temFiltro
-            ? "Nenhum evento com esses filtros."
-            : "Nada registrado ainda. A trilha começa no próximo lançamento."}
-        </Vazio>
+        <Vazio>{temFiltro ? t.audit.vazioComFiltro : t.audit.vazio}</Vazio>
       ) : (
         <ol className="card divide-y divide-slate-100">
           {dados.registros.map((r) => (
@@ -192,19 +186,15 @@ export default function AuditoriaPage() {
 
       {dados.truncado && (
         <p className="mt-3 text-xs text-slate-500">
-          Mostrando {dados.limite} de {dados.total} eventos. Use os filtros para
-          refinar.
+          {t.audit.truncado(dados.limite, dados.total)}
         </p>
       )}
 
       <p className="mt-6 flex items-start gap-2 text-xs text-slate-500">
         <ShieldCheck size={14} className="mt-0.5 shrink-0 text-slate-400" />
         <span>
-          A trilha é <strong>append-only</strong>: nada aqui é editado ou apagado
-          pela aplicação. Um registro que o próprio sistema pode alterar não serve
-          para auditar o sistema. Restaurar um backup no modo &quot;substituir
-          tudo&quot; apaga a trilha anterior — mas o próprio evento de restauração
-          fica gravado logo depois.
+          {t.audit.appendOnlyPre} <strong>{t.audit.appendOnlyBold}</strong>
+          {t.audit.appendOnly}
         </span>
       </p>
     </>

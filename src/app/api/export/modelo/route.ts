@@ -1,5 +1,6 @@
 import { gerarCSV } from "@/lib/csv";
 import { exigirSocio } from "@/lib/sessao";
+import { t } from "@/lib/i18n";
 
 /** Modelo em branco para quem vai montar o CSV na mão. */
 export async function GET() {
@@ -9,7 +10,7 @@ export async function GET() {
   const exemplo = [
     {
       data: "05/08/2026",
-      descricao: "NF 042 - Sprint de agosto",
+      descricao: t.csv.modeloExemploDescReceita,
       valor: "15000,00",
       tipo: "ENTRADA",
       categoria: "Projetos",
@@ -21,7 +22,7 @@ export async function GET() {
     },
     {
       data: "05/08/2026",
-      descricao: "Google Workspace",
+      descricao: t.csv.modeloExemploDescDespesa,
       valor: "-245,00",
       tipo: "SAIDA",
       categoria: "Ferramentas",
@@ -34,24 +35,24 @@ export async function GET() {
     {
       // Despesa paga do bolso do sócio: vira base de reembolso.
       data: "05/08/2026",
-      descricao: "Claude Pro",
+      descricao: t.csv.modeloExemploDescBolso,
       valor: "-120,00",
       tipo: "SAIDA",
       categoria: "Ferramentas",
       cliente: "",
-      socio: "Nome do Sócio",
+      socio: t.csv.modeloExemploSocio,
       natureza: "",
       data_caixa: "05/08/2026",
-      observacoes: "pago do proprio bolso",
+      observacoes: t.csv.modeloExemploObsBolso,
     },
     {
       data: "10/08/2026",
-      descricao: "Distribuicao de lucros",
+      descricao: t.csv.modeloExemploDescDist,
       valor: "-3000,00",
       tipo: "DISTRIBUICAO",
       categoria: "",
       cliente: "",
-      socio: "Nome do Sócio",
+      socio: t.csv.modeloExemploSocio,
       natureza: "LUCRO",
       data_caixa: "10/08/2026",
       observacoes: "",

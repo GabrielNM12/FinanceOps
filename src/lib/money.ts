@@ -6,19 +6,21 @@
  * financeiro isso vira divergência de centavos que ninguém consegue explicar.
  */
 
-const BRL = new Intl.NumberFormat("pt-BR", {
+import { intlLocale, locale, t } from "@/lib/i18n";
+
+const BRL = new Intl.NumberFormat(intlLocale, {
   style: "currency",
   currency: "BRL",
 });
 
-const BRL_COMPACTO = new Intl.NumberFormat("pt-BR", {
+const BRL_COMPACTO = new Intl.NumberFormat(intlLocale, {
   style: "currency",
   currency: "BRL",
   notation: "compact",
   maximumFractionDigits: 1,
 });
 
-/** 123456 -> "R$ 1.234,56" */
+/** 123456 -> "R$ 1.234,56" (pt) / "R$ 1,234.56" (en) */
 export function formatarBRL(centavos: number): string {
   return BRL.format(centavos / 100);
 }
@@ -28,9 +30,9 @@ export function formatarBRLCompacto(centavos: number): string {
   return BRL_COMPACTO.format(centavos / 100);
 }
 
-/** 600 -> "6,00%" */
+/** 600 -> "6,00%" (pt) / "6.00%" (en) */
 export function formatarBps(bps: number): string {
-  return `${(bps / 100).toLocaleString("pt-BR", {
+  return `${(bps / 100).toLocaleString(intlLocale, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}%`;
@@ -46,7 +48,7 @@ export function formatarBps(bps: number): string {
  */
 export function parseCentavos(entrada: string | number): number {
   if (typeof entrada === "number") {
-    if (!Number.isFinite(entrada)) throw new Error("Valor inválido");
+    if (!Number.isFinite(entrada)) throw new Error(t.money.invalid);
     return Math.round(entrada * 100);
   }
 
@@ -58,6 +60,7 @@ export function parseCentavos(entrada: string | number): number {
 
   const temVirgula = s.includes(",");
   const temPonto = s.includes(".");
+  const en = locale === "en";
 
   if (temVirgula && temPonto) {
     // O último separador que aparece é o decimal.
@@ -65,15 +68,18 @@ export function parseCentavos(entrada: string | number): number {
       ? s.replace(/\./g, "").replace(",", ".")
       : s.replace(/,/g, "");
   } else if (temVirgula) {
-    s = s.replace(",", ".");
+    // pt: vírgula é decimal. en: vírgula é só separador de milhar.
+    s = en ? s.replace(/,/g, "") : s.replace(",", ".");
   } else if (temPonto) {
-    // "1.234" = milhar; "1.23" = decimal.
-    const casas = s.length - s.lastIndexOf(".") - 1;
-    if (casas === 3) s = s.replace(/\./g, "");
+    // pt: "1.234" = milhar; "1.23" = decimal. en: ponto é sempre decimal.
+    if (!en) {
+      const casas = s.length - s.lastIndexOf(".") - 1;
+      if (casas === 3) s = s.replace(/\./g, "");
+    }
   }
 
   const n = Number(s);
-  if (!Number.isFinite(n)) throw new Error(`Valor monetário inválido: "${entrada}"`);
+  if (!Number.isFinite(n)) throw new Error(t.money.invalidMoney(entrada));
 
   const centavos = Math.round(n * 100);
   return negativo ? -centavos : centavos;
@@ -84,7 +90,7 @@ export function parseBps(entrada: string | number): number {
   if (typeof entrada === "number") return Math.round(entrada * 100);
   const s = entrada.trim().replace("%", "").replace(",", ".");
   const n = Number(s);
-  if (!Number.isFinite(n)) throw new Error(`Percentual inválido: "${entrada}"`);
+  if (!Number.isFinite(n)) throw new Error(t.money.invalidPercent(entrada));
   return Math.round(n * 100);
 }
 

@@ -8,6 +8,7 @@ import { gerarLancamentosRecorrentes } from "@/lib/recorrentes";
 import { exigirAcesso } from "@/lib/sessao";
 import { registrar } from "@/lib/auditoria";
 import { normalizarEmail } from "@/lib/acesso";
+import { t } from "@/lib/i18n";
 
 const texto = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const opcional = (fd: FormData, k: string) => texto(fd, k) || null;
@@ -17,14 +18,14 @@ const opcional = (fd: FormData, k: string) => texto(fd, k) || null;
 export async function criarSocio(fd: FormData) {
   const sessao = await exigirAcesso();
   const nome = texto(fd, "nome");
-  if (!nome) throw new Error("Informe o nome do sócio.");
+  if (!nome) throw new Error(t.errors.informeNomeSocio);
 
   // O e-mail é a identidade de login, então entra normalizado e único.
   const email = normalizarEmail(texto(fd, "email")) || null;
   if (email) {
     const conflito = await prisma.socio.findFirst({ where: { email } });
     if (conflito) {
-      throw new Error(`O e-mail ${email} já está no sócio ${conflito.nome}.`);
+      throw new Error(t.errors.emailJaNoSocio(email, conflito.nome));
     }
   }
 
@@ -71,13 +72,13 @@ export async function alterarEmailSocio(id: string, emailBruto: string) {
   const sessao = await exigirAcesso();
 
   const socio = await prisma.socio.findUnique({ where: { id } });
-  if (!socio) throw new Error("Sócio não encontrado.");
+  if (!socio) throw new Error(t.errors.socioNaoEncontrado);
 
   const novo = normalizarEmail(emailBruto);
   const antigo = normalizarEmail(socio.email);
 
   if (novo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(novo)) {
-    throw new Error("E-mail inválido.");
+    throw new Error(t.errors.emailInvalido);
   }
   if (novo === antigo) return;
 
@@ -86,9 +87,7 @@ export async function alterarEmailSocio(id: string, emailBruto: string) {
       where: { email: novo, NOT: { id } },
     });
     if (conflito) {
-      throw new Error(
-        `O e-mail ${novo} já está no sócio ${conflito.nome}. Cada endereço pertence a uma pessoa só.`
-      );
+      throw new Error(t.errors.emailJaNoSocioUnico(novo, conflito.nome));
     }
   }
 
@@ -132,10 +131,10 @@ export async function excluirSocio(id: string) {
 export async function criarCliente(fd: FormData) {
   const sessao = await exigirAcesso();
   const nome = texto(fd, "nome");
-  if (!nome) throw new Error("Informe o nome do cliente.");
+  if (!nome) throw new Error(t.errors.informeNomeCliente);
 
   const jaExiste = await prisma.cliente.findFirst({ where: { nome } });
-  if (jaExiste) throw new Error(`O cliente "${nome}" já está cadastrado.`);
+  if (jaExiste) throw new Error(t.errors.clienteJaCadastrado(nome));
 
   await prisma.cliente.create({ data: { nome } });
   revalidarCadastros();
@@ -143,7 +142,7 @@ export async function criarCliente(fd: FormData) {
 
 export async function renomearCliente(id: string, nome: string) {
   const sessao = await exigirAcesso();
-  if (!nome.trim()) throw new Error("Informe o nome do cliente.");
+  if (!nome.trim()) throw new Error(t.errors.informeNomeCliente);
   await prisma.cliente.update({ where: { id }, data: { nome: nome.trim() } });
   revalidarCadastros();
 }
@@ -189,7 +188,7 @@ export async function excluirCategoria(id: string) {
   const sessao = await exigirAcesso();
   const cat = await prisma.categoria.findUnique({ where: { id } });
   if (cat?.ehImposto) {
-    throw new Error("A categoria de impostos não pode ser excluída.");
+    throw new Error(t.errors.categoriaImpostoNaoExclui);
   }
   await prisma.categoria.delete({ where: { id } });
   revalidatePath("/configuracoes");
@@ -200,7 +199,7 @@ export async function excluirCategoria(id: string) {
 export async function criarRecorrente(fd: FormData) {
   const sessao = await exigirAcesso();
   const valor = parseCentavos(texto(fd, "valor"));
-  if (valor <= 0) throw new Error("Informe um valor maior que zero.");
+  if (valor <= 0) throw new Error(t.errors.valorMaiorQueZero);
 
   await prisma.recorrente.create({
     data: {

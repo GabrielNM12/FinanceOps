@@ -43,5 +43,8 @@ export function demoLigado(valor: string | undefined | null): boolean {
  */
 export const EMAIL_DEMO = "demo@financeops.invalid";
 
-export const AVISO_DEMO =
-  "MODO DEMO — sem autenticação. Dados fictícios, qualquer pessoa com a URL tem acesso total.";
+/**
+ * Texto da tarja: vive em `@/lib/i18n` (`t.demo.aviso`). NÃO é reexportado aqui
+ * porque este módulo é importado pelo middleware (Edge) e não deve arrastar os
+ * dicionários de tradução para aquele bundle.
+ */

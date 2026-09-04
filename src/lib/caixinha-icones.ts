@@ -18,24 +18,30 @@ import {
   Building,
   type LucideIcon,
 } from "lucide-react";
+import { t } from "@/lib/i18n";
 
-export const ICONES: Record<string, { Icone: LucideIcon; rotulo: string }> = {
-  "piggy-bank": { Icone: PiggyBank, rotulo: "Cofre" },
-  "shield-check": { Icone: ShieldCheck, rotulo: "Emergência" },
-  landmark: { Icone: Landmark, rotulo: "Impostos" },
-  laptop: { Icone: Laptop, rotulo: "Equipamento" },
-  plane: { Icone: Plane, rotulo: "Viagem" },
-  wrench: { Icone: Wrench, rotulo: "Manutenção" },
-  "graduation-cap": { Icone: GraduationCap, rotulo: "Capacitação" },
-  gift: { Icone: Gift, rotulo: "13º / bônus" },
-  "trending-up": { Icone: TrendingUp, rotulo: "Investimento" },
-  building: { Icone: Building, rotulo: "Escritório" },
+/** A chave é o que fica no banco; o rótulo vem do dicionário (t.icons). */
+export const ICONES: Record<string, { Icone: LucideIcon }> = {
+  "piggy-bank": { Icone: PiggyBank },
+  "shield-check": { Icone: ShieldCheck },
+  landmark: { Icone: Landmark },
+  laptop: { Icone: Laptop },
+  plane: { Icone: Plane },
+  wrench: { Icone: Wrench },
+  "graduation-cap": { Icone: GraduationCap },
+  gift: { Icone: Gift },
+  "trending-up": { Icone: TrendingUp },
+  building: { Icone: Building },
 };
 
 export const CHAVES_ICONE = Object.keys(ICONES);
 
 export function iconeDe(chave: string): LucideIcon {
   return ICONES[chave]?.Icone ?? PiggyBank;
+}
+
+export function rotuloIcone(chave: string): string {
+  return t.icons[chave as keyof typeof t.icons] ?? chave;
 }
 
 /** Paleta sugerida — o input de cor continua livre. */

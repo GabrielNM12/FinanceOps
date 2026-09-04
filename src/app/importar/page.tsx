@@ -13,6 +13,7 @@ import { useState } from "react";
 import RestaurarBackup from "@/components/RestaurarBackup";
 import { useDados } from "@/hooks/useDados";
 import { formatarData } from "@/lib/datas";
+import { t } from "@/lib/i18n";
 
 type Dados = {
   historico: {
@@ -32,18 +33,18 @@ export default function ImportarPage() {
 
   const cabecalho = (
     <PageTitle
-      titulo="Importar e exportar"
-      descricao="Extrato do banco em CSV, ou backup completo para restaurar o sistema inteiro."
+      titulo={t.importPage.title}
+      descricao={t.importPage.subtitle}
       acao={
         <div className="flex flex-wrap gap-2">
           <Link href="/api/export/backup" className="btn-teal">
-            <Download size={15} /> Backup completo
+            <Download size={15} /> {t.importPage.backupCompleto}
           </Link>
           <Link href="/api/export/transacoes" className="btn-ghost">
-            <Download size={15} /> Lançamentos
+            <Download size={15} /> {t.importPage.lancamentos}
           </Link>
           <Link href="/api/export/impostos" className="btn-ghost">
-            <Download size={15} /> Impostos
+            <Download size={15} /> {t.importPage.impostos}
           </Link>
         </div>
       }
@@ -76,8 +77,8 @@ export default function ImportarPage() {
       <div className="mb-6 inline-flex rounded-lg border border-slate-300 bg-white p-0.5">
         {(
           [
-            ["csv", "Extrato CSV", FileSpreadsheet],
-            ["backup", "Backup completo", DatabaseBackup],
+            ["csv", t.importPage.tabCsv, FileSpreadsheet],
+            ["backup", t.importPage.tabBackup, DatabaseBackup],
           ] as const
         ).map(([id, label, Icone]) => (
           <button
@@ -101,16 +102,16 @@ export default function ImportarPage() {
 
       {dados.historico.length > 0 && (
         <div className="mt-6">
-          <Secao titulo="Importações anteriores">
+          <Secao titulo={t.importPage.importacoesAnteriores}>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="th">Arquivo</th>
-                    <th className="th">Data</th>
-                    <th className="th text-right">Linhas</th>
-                    <th className="th text-right">Importadas</th>
-                    <th className="th text-right">Ignoradas</th>
+                    <th className="th">{t.importPage.thArquivo}</th>
+                    <th className="th">{t.importPage.thData}</th>
+                    <th className="th text-right">{t.importPage.thLinhas}</th>
+                    <th className="th text-right">{t.importPage.thImportadas}</th>
+                    <th className="th text-right">{t.importPage.thIgnoradas}</th>
                   </tr>
                 </thead>
                 <tbody>

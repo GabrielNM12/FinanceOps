@@ -1,5 +1,6 @@
 import CarregandoTela from "@/components/CarregandoTela";
 import { EsqueletoImportar } from "@/components/Esqueleto";
+import { t } from "@/lib/i18n";
 
 /**
  * Mostrado enquanto o JavaScript desta rota carrega.
@@ -14,7 +15,7 @@ import { EsqueletoImportar } from "@/components/Esqueleto";
  */
 export default function Carregando() {
   return (
-    <CarregandoTela titulo="Importar e exportar" descricao="Extrato do banco em CSV, ou backup completo para restaurar o sistema inteiro.">
+    <CarregandoTela titulo={t.importPage.title} descricao={t.importPage.subtitle}>
       <EsqueletoImportar />
     </CarregandoTela>
   );

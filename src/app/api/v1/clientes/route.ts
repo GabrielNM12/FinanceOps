@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { verificarToken, erro } from "@/lib/api-auth";
 import { margemPorCliente } from "@/lib/queries";
+import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -28,11 +29,11 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return erro("Corpo inválido: esperado JSON.");
+    return erro(t.errors.corpoInvalidoJson);
   }
 
   const nome = String(body.nome ?? "").trim();
-  if (!nome) return erro("Campo 'nome' é obrigatório.");
+  if (!nome) return erro(t.errors.campoNomeObrigatorio);
 
   const existente = await prisma.cliente.findFirst({ where: { nome } });
   if (existente) return Response.json(existente, { status: 200 });

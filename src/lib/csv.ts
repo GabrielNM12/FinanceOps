@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import { parseCentavos } from "./money";
 import { dataUTC } from "./datas";
+import { locale, t } from "@/lib/i18n";
 
 /**
  * CSV sem dependência externa.
@@ -251,19 +252,19 @@ export function prepararImportacao(texto: string): {
       mapa[c] !== undefined ? (cols[mapa[c]!] ?? "").trim() : "";
 
     const dataRaw = pega("data");
-    const descricao = pega("descricao") || "(sem descrição)";
+    const descricao = pega("descricao") || t.csv.semDescricao;
     const valorRaw = pega("valor");
     const tipoRaw = normalizar(pega("tipo"));
 
     let erro: string | null = null;
     const data = parseDataBR(dataRaw);
-    if (!data) erro = `Data inválida: "${dataRaw}"`;
+    if (!data) erro = t.csv.dataInvalida(dataRaw);
 
     let valorCentavos = 0;
     try {
       valorCentavos = parseCentavos(valorRaw);
     } catch {
-      erro = erro ?? `Valor inválido: "${valorRaw}"`;
+      erro = erro ?? t.csv.valorInvalido(valorRaw);
     }
 
     const naturezaRaw = normalizar(pega("natureza"));
@@ -276,13 +277,11 @@ export function prepararImportacao(texto: string): {
       else if (TIPOS_DISTRIBUICAO.includes(tipoRaw)) tipo = "DISTRIBUICAO";
       else if (TIPOS_TRANSFERENCIA.includes(tipoRaw)) {
         tipo = "SAIDA";
-        erro =
-          erro ??
-          "Transferência não pode ser importada. Registre pela tela de Caixinhas, que grava o movimento e o extrato juntos.";
+        erro = erro ?? t.csv.transferenciaNaoImporta;
       } else if (TIPOS_SAIDA.includes(tipoRaw)) tipo = "SAIDA";
       else {
         tipo = valorCentavos < 0 ? "SAIDA" : "ENTRADA";
-        erro = erro ?? `Tipo desconhecido: "${pega("tipo")}"`;
+        erro = erro ?? t.csv.tipoDesconhecido(pega("tipo"));
       }
     } else {
       tipo = valorCentavos < 0 ? "SAIDA" : "ENTRADA";
@@ -292,12 +291,12 @@ export function prepararImportacao(texto: string): {
     const natureza =
       tipo === "DISTRIBUICAO" ? inferirNatureza(tipoRaw, naturezaRaw) : null;
 
-    if (valorCentavos === 0 && !erro) erro = "Valor zerado";
+    if (valorCentavos === 0 && !erro) erro = t.csv.valorZerado;
 
     // Sem sócio, uma distribuição não responde "quem recebeu o quê" — que é o
     // problema que este sistema existe para resolver. Melhor barrar na entrada.
     if ((tipo === "DISTRIBUICAO" || tipo === "APORTE") && !socio && !erro) {
-      erro = `${tipo === "APORTE" ? "Aporte" : "Distribuição"} sem a coluna "socio" preenchida`;
+      erro = t.csv.semSocio(tipo);
     }
 
     // O sócio entra na chave: quatro distribuições de mesmo valor no mesmo dia
@@ -331,26 +330,31 @@ export function prepararImportacao(texto: string): {
 // Exportação
 // ---------------------------------------------------------------------------
 
+/** ";" no pt (Excel pt-BR), "," no en. */
+const DELIM = locale === "en" ? "," : ";";
+/** "," decimal no pt (Excel pt-BR), "." no en. */
+const DECIMAL = locale === "en" ? "." : ",";
+
 function escapar(v: unknown): string {
   const s = v == null ? "" : String(v);
-  return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  return new RegExp(`["${DELIM}\\n\\r]`).test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
 /**
- * Gera CSV com ";" e BOM UTF-8 — é o que faz o Excel pt-BR abrir o arquivo
- * com acentos corretos e colunas separadas sem passar pelo assistente.
- * Valores saem como "1234,56" (vírgula decimal) para o Excel entender número.
+ * Gera CSV com BOM UTF-8 — é o que faz o Excel abrir o arquivo com acentos
+ * corretos e colunas separadas sem passar pelo assistente. O separador e o
+ * decimal seguem o locale (pt: ";" e ","; en: "," e ".").
  */
 export function gerarCSV(linhas: Record<string, unknown>[], colunas?: string[]): string {
   if (linhas.length === 0) return "﻿";
   const cols = colunas ?? Object.keys(linhas[0]);
-  const corpo = linhas.map((l) => cols.map((c) => escapar(l[c])).join(";"));
-  return "﻿" + [cols.join(";"), ...corpo].join("\r\n");
+  const corpo = linhas.map((l) => cols.map((c) => escapar(l[c])).join(DELIM));
+  return "﻿" + [cols.join(DELIM), ...corpo].join("\r\n");
 }
 
-/** 123456 -> "1234,56" — formato numérico que o Excel pt-BR reconhece. */
+/** 123456 -> "1234,56" (pt) / "1234.56" (en) — formato numérico do Excel local. */
 export function centavosParaCSV(centavos: number): string {
   const sinal = centavos < 0 ? "-" : "";
   const abs = Math.abs(centavos);
-  return `${sinal}${Math.trunc(abs / 100)},${String(abs % 100).padStart(2, "0")}`;
+  return `${sinal}${Math.trunc(abs / 100)}${DECIMAL}${String(abs % 100).padStart(2, "0")}`;
 }

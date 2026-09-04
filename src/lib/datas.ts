@@ -5,6 +5,7 @@
  * um lançamento do dia 01 salvo em UTC-3 vira dia 30 do mês anterior quando lido
  * de volta — e o fechamento mensal passa a mentir uma vez por mês.
  */
+import { intlLocale, t } from "@/lib/i18n";
 
 export type Competencia = string; // "YYYY-MM"
 
@@ -91,11 +92,10 @@ export function diaDoMesSeguro(ano: number, mes1a12: number, dia: number): Date 
 
 export function formatarData(d: Date | null | undefined): string {
   if (!d) return "—";
-  return d.toLocaleDateString("pt-BR", { timeZone: "UTC" });
+  return d.toLocaleDateString(intlLocale, { timeZone: "UTC" });
 }
 
 export function formatarCompetencia(c: Competencia): string {
   const [a, m] = c.split("-");
-  const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-  return `${meses[Number(m) - 1]}/${a.slice(2)}`;
+  return `${t.dates.monthsShort[Number(m) - 1]}/${a.slice(2)}`;
 }

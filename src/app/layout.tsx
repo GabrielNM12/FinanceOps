@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import Shell from "@/components/Shell";
+import { intlLocale, t } from "@/lib/i18n";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FinanceOps — Korvantis",
-  description: "Controle de caixa, impostos e distribuição entre sócios",
+  title: t.meta.title,
+  description: t.meta.description,
 };
 
 /**
@@ -27,7 +28,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang={intlLocale}>
       <body>
         <Shell>{children}</Shell>
       </body>

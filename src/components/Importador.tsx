@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { formatarBRL } from "@/lib/money";
+import { formatarData } from "@/lib/datas";
+import { t } from "@/lib/i18n";
 import { analisarCSV, confirmarImportacao, PreviewImportacao } from "@/actions/importacao";
 
 /**
@@ -33,7 +35,7 @@ export default function Importador({ aoImportar }: { aoImportar?: () => void }) 
 
       <section className="card p-5">
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-600">
-          1. Selecione o arquivo
+          {t.importer.passo1}
         </h2>
 
         <form
@@ -54,7 +56,7 @@ export default function Importador({ aoImportar }: { aoImportar?: () => void }) 
           className="flex flex-wrap items-end gap-4"
         >
           <div className="min-w-[280px] flex-1">
-            <label className="label">Arquivo CSV</label>
+            <label className="label">{t.importer.arquivoCsv}</label>
             <input
               type="file"
               name="arquivo"
@@ -64,35 +66,37 @@ export default function Importador({ aoImportar }: { aoImportar?: () => void }) 
             />
           </div>
           <button disabled={pendente} className="btn-ghost">
-            {pendente ? "Analisando..." : "Analisar"}
+            {pendente ? t.importer.analisando : t.importer.analisar}
           </button>
         </form>
 
         <div className="mt-4 rounded-lg bg-slate-50 p-4 text-xs text-slate-600">
-          <p className="mb-2 font-medium">Formato esperado</p>
+          <p className="mb-2 font-medium">{t.importer.formatoTitulo}</p>
           <p>
-            Colunas reconhecidas (em qualquer ordem, nomes flexíveis):{" "}
+            {t.importer.formatoP1Pre}
             <code>data</code>, <code>descricao</code>, <code>valor</code>,{" "}
             <code>tipo</code>, <code>categoria</code>, <code>cliente</code>,{" "}
             <code>socio</code>, <code>natureza</code>, <code>data_caixa</code>,{" "}
-            <code>observacoes</code>. Só <code>data</code> e <code>valor</code>{" "}
-            são obrigatórias.
+            <code>observacoes</code>
+            {t.importer.formatoP1Pos}
+            <code>data</code> / <code>valor</code>
+            {t.importer.formatoP1Fim}
           </p>
           <p className="mt-2">
-            <code>tipo</code> aceita <code>ENTRADA</code>, <code>SAIDA</code>,{" "}
-            <code>DISTRIBUICAO</code> e <code>APORTE</code>. Em distribuição,{" "}
-            <code>natureza</code> escolhe entre <code>LUCRO</code>,{" "}
-            <code>PRO_LABORE</code> e <code>REEMBOLSO</code> — e a coluna{" "}
-            <code>socio</code> passa a ser obrigatória, com o nome exatamente
-            como está cadastrado.
+            <code>tipo</code>
+            {t.importer.formatoP2Pre}
+            <code>ENTRADA</code>, <code>SAIDA</code>, <code>DISTRIBUICAO</code>,{" "}
+            <code>APORTE</code>
+            {t.importer.formatoP2Meio}
+            <code>natureza</code>
+            {t.importer.formatoP2MeioB}
+            <code>LUCRO</code>, <code>PRO_LABORE</code>, <code>REEMBOLSO</code>
+            {t.importer.formatoP2Fim}
           </p>
           <p className="mt-2">
-            Aceita separador <code>;</code> ou <code>,</code>, valores como{" "}
-            <code>1.234,56</code> e datas <code>dd/mm/aaaa</code>. Sem coluna{" "}
-            <code>tipo</code>, valor negativo vira despesa. Deixe{" "}
-            <code>data_caixa</code> vazio para o lançamento entrar como pendente.{" "}
+            {t.importer.formatoP3}
             <a href="/api/export/modelo" className="underline">
-              Baixar modelo
+              {t.importer.baixarModelo}
             </a>
           </p>
         </div>
@@ -101,25 +105,23 @@ export default function Importador({ aoImportar }: { aoImportar?: () => void }) 
       {preview && (
         <section className="card p-5">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-600">
-            2. Confira antes de gravar — {preview.arquivo}
+            {t.importer.passo2(preview.arquivo)}
           </h2>
 
           <div className="mb-4 grid gap-3 sm:grid-cols-4">
-            <Contador titulo="Linhas" valor={preview.resumo.total} />
-            <Contador titulo="Válidas" valor={preview.resumo.validas} tom="ok" />
+            <Contador titulo={t.importer.contLinhas} valor={preview.resumo.total} />
+            <Contador titulo={t.importer.contValidas} valor={preview.resumo.validas} tom="ok" />
             <Contador
-              titulo="Já importadas"
+              titulo={t.importer.contJaImportadas}
               valor={preview.resumo.duplicadas}
               tom="aviso"
             />
-            <Contador titulo="Com erro" valor={preview.resumo.comErro} tom="erro" />
+            <Contador titulo={t.importer.contComErro} valor={preview.resumo.comErro} tom="erro" />
           </div>
 
           {preview.resumo.duplicadas > 0 && (
             <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              {preview.resumo.duplicadas} linha(s) já existem no banco (mesma data,
-              valor e descrição) e serão puladas. É o que permite reimportar o extrato
-              do mês inteiro sem duplicar nada.
+              {t.importer.duplicadasAviso(preview.resumo.duplicadas)}
             </p>
           )}
 
@@ -127,14 +129,14 @@ export default function Importador({ aoImportar }: { aoImportar?: () => void }) 
             <table className="w-full">
               <thead className="sticky top-0 bg-slate-50">
                 <tr>
-                  <th className="th">#</th>
-                  <th className="th">Data</th>
-                  <th className="th">Descrição</th>
-                  <th className="th">Tipo</th>
-                  <th className="th">Categoria</th>
-                  <th className="th">Cliente / Sócio</th>
-                  <th className="th text-right">Valor</th>
-                  <th className="th">Situação</th>
+                  <th className="th">{t.importer.thHash}</th>
+                  <th className="th">{t.importer.thData}</th>
+                  <th className="th">{t.importer.thDescricao}</th>
+                  <th className="th">{t.importer.thTipo}</th>
+                  <th className="th">{t.importer.thCategoria}</th>
+                  <th className="th">{t.importer.thClienteSocio}</th>
+                  <th className="th text-right">{t.importer.thValor}</th>
+                  <th className="th">{t.importer.thSituacao}</th>
                 </tr>
               </thead>
               <tbody>
@@ -147,21 +149,21 @@ export default function Importador({ aoImportar }: { aoImportar?: () => void }) 
                   >
                     <td className="td text-xs text-slate-400">{l.linha}</td>
                     <td className="td whitespace-nowrap text-slate-600">
-                      {l.data ? new Date(l.data).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "—"}
+                      {l.data ? formatarData(new Date(l.data)) : "—"}
                     </td>
                     <td className="td">{l.descricao}</td>
                     <td className="td text-xs">
                       {
                         {
-                          ENTRADA: "receita",
-                          SAIDA: "despesa",
-                          APORTE: "aporte",
+                          ENTRADA: t.importer.tipoReceita,
+                          SAIDA: t.importer.tipoDespesa,
+                          APORTE: t.importer.tipoAporte,
                           DISTRIBUICAO:
                             l.natureza === "PRO_LABORE"
-                              ? "pró-labore"
+                              ? t.importer.tipoProLabore
                               : l.natureza === "REEMBOLSO"
-                                ? "reembolso"
-                                : "lucro",
+                                ? t.importer.tipoReembolso
+                                : t.importer.tipoLucro,
                         }[l.tipo]
                       }
                     </td>
@@ -174,9 +176,9 @@ export default function Importador({ aoImportar }: { aoImportar?: () => void }) 
                       {l.erro ? (
                         <span className="text-red-600">{l.erro}</span>
                       ) : l.duplicada ? (
-                        <span className="text-amber-600">já importada</span>
+                        <span className="text-amber-600">{t.importer.jaImportada}</span>
                       ) : (
-                        <span className="text-emerald-600">ok</span>
+                        <span className="text-emerald-600">{t.importer.ok}</span>
                       )}
                     </td>
                   </tr>
@@ -194,10 +196,9 @@ export default function Importador({ aoImportar }: { aoImportar?: () => void }) 
                 className="mt-0.5"
               />
               <span>
-                Provisionar DAS sobre as receitas importadas
+                {t.importer.provisionarLabel}
                 <span className="block text-xs text-slate-500">
-                  Desmarque só se o imposto dessas receitas já estiver lançado — senão
-                  o mês entra sem imposto e o lucro fica inflado.
+                  {t.importer.provisionarSub}
                 </span>
               </span>
             </label>
@@ -211,9 +212,7 @@ export default function Importador({ aoImportar }: { aoImportar?: () => void }) 
                     const r = await confirmarImportacao(preview.arquivo, preview.linhas, {
                       provisionarImposto: provisionar,
                     });
-                    setResultado(
-                      `${r.importadas} lançamento(s) importado(s), ${r.ignoradas} ignorado(s).`
-                    );
+                    setResultado(t.importer.resultado(r.importadas, r.ignoradas));
                     setPreview(null);
                     aoImportar?.();
                   } catch (e) {
@@ -224,8 +223,8 @@ export default function Importador({ aoImportar }: { aoImportar?: () => void }) 
               className="btn-teal"
             >
               {pendente
-                ? "Importando..."
-                : `Importar ${preview.resumo.validas} lançamento(s)`}
+                ? t.importer.importando
+                : t.importer.importarN(preview.resumo.validas)}
             </button>
           </div>
         </section>

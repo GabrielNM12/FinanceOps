@@ -1,5 +1,6 @@
 import CarregandoTela from "@/components/CarregandoTela";
 import { EsqueletoRecorrentes } from "@/components/Esqueleto";
+import { t } from "@/lib/i18n";
 
 /**
  * Mostrado enquanto o JavaScript desta rota carrega.
@@ -14,7 +15,7 @@ import { EsqueletoRecorrentes } from "@/components/Esqueleto";
  */
 export default function Carregando() {
   return (
-    <CarregandoTela titulo="Recorrentes" descricao="Regras que geram lançamentos automaticamente todo mês.">
+    <CarregandoTela titulo={t.recurring.title} descricao={t.recurring.subtitle}>
       <EsqueletoRecorrentes />
     </CarregandoTela>
   );

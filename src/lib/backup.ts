@@ -12,6 +12,7 @@
  * Este formato guarda tudo, inclusive os IDs, para que restaurar produza um
  * banco idêntico ao original — não um parecido.
  */
+import { t } from "@/lib/i18n";
 
 export const VERSAO_BACKUP = 1;
 
@@ -71,21 +72,7 @@ export const ORDEM_INSERCAO: (keyof DadosBackup)[] = [
 /** Ordem de exclusão: o inverso, para nunca apagar um pai antes do filho. */
 export const ORDEM_EXCLUSAO = [...ORDEM_INSERCAO].reverse();
 
-export const ROTULOS: Record<keyof DadosBackup, string> = {
-  config: "Configurações",
-  faixasSimples: "Faixas do Simples",
-  socios: "Sócios",
-  clientes: "Clientes",
-  categorias: "Categorias",
-  caixinhas: "Caixinhas",
-  recorrentes: "Recorrentes",
-  importacoes: "Histórico de importações",
-  transacoes: "Lançamentos",
-  impostos: "Provisões e guias",
-  distribuicoes: "Distribuições",
-  movimentosCaixinha: "Movimentos de caixinha",
-  auditoria: "Trilha de auditoria",
-};
+export const ROTULOS: Record<keyof DadosBackup, string> = t.backup.rotulos;
 
 /** Campos que são DateTime e precisam virar Date na restauração. */
 export const CAMPOS_DATA = new Set([
@@ -125,28 +112,24 @@ export type Validacao =
  */
 export function validarBackup(bruto: unknown): Validacao {
   if (typeof bruto !== "object" || bruto === null) {
-    return { ok: false, erro: "Arquivo não é um JSON válido." };
+    return { ok: false, erro: t.backup.naoJsonValido };
   }
 
   const b = bruto as Partial<Backup>;
 
   if (!b.financeops || typeof b.financeops.versao !== "number") {
-    return {
-      ok: false,
-      erro:
-        "Este não parece um backup do FinanceOps. Falta o cabeçalho `financeops.versao`.",
-    };
+    return { ok: false, erro: t.backup.naoEhBackup };
   }
 
   if (b.financeops.versao > VERSAO_BACKUP) {
     return {
       ok: false,
-      erro: `Backup na versão ${b.financeops.versao}, mas esta instalação lê no máximo a ${VERSAO_BACKUP}. Atualize o app antes de restaurar.`,
+      erro: t.backup.versaoAlta(b.financeops.versao, VERSAO_BACKUP),
     };
   }
 
   if (!b.dados || typeof b.dados !== "object") {
-    return { ok: false, erro: "O arquivo não tem a seção `dados`." };
+    return { ok: false, erro: t.backup.semDados };
   }
 
   const avisos: string[] = [];
@@ -158,11 +141,11 @@ export function validarBackup(bruto: unknown): Validacao {
       // Tabela ausente é tolerável: o backup pode vir de uma versão anterior
       // que ainda não tinha aquela tabela. Vazio é diferente de corrompido.
       dados[chave] = [];
-      avisos.push(`"${ROTULOS[chave]}" não existe no arquivo — será ignorada.`);
+      avisos.push(t.backup.secaoAusente(ROTULOS[chave]));
       continue;
     }
     if (!Array.isArray(valor)) {
-      return { ok: false, erro: `A seção "${ROTULOS[chave]}" deveria ser uma lista.` };
+      return { ok: false, erro: t.backup.secaoNaoLista(ROTULOS[chave]) };
     }
     const semId = valor.filter(
       (r) => chave !== "config" && (!r || typeof (r as Registro).id !== "string")
@@ -170,7 +153,7 @@ export function validarBackup(bruto: unknown): Validacao {
     if (semId.length > 0) {
       return {
         ok: false,
-        erro: `${semId.length} registro(s) em "${ROTULOS[chave]}" estão sem id. Arquivo corrompido.`,
+        erro: t.backup.registrosSemId(semId.length, ROTULOS[chave]),
       };
     }
   }
@@ -213,9 +196,7 @@ export function conferirReferencias(dados: DadosBackup): string[] {
       return typeof v === "string" && v && !conjunto.has(v);
     });
     if (orfaos.length > 0) {
-      problemas.push(
-        `${orfaos.length} registro(s) apontam para ${rotulo} que não está no arquivo (campo ${campo}).`
-      );
+      problemas.push(t.backup.orfaos(orfaos.length, rotulo, campo));
     }
   };
 
@@ -247,19 +228,41 @@ export function conferirReferencias(dados: DadosBackup): string[] {
     if (repetidos.size > 0) {
       const amostra = [...repetidos].slice(0, 3).join(", ");
       problemas.push(
-        `${ROTULOS[secao]}: ${repetidos.size} ${campo}(s) repetido(s) — ${amostra}${
-          repetidos.size > 3 ? ", ..." : ""
-        }.`
+        t.backup.repetidos(ROTULOS[secao], repetidos.size, campo, amostra, repetidos.size > 3)
       );
     }
   }
 
-  checar(dados.impostos, "receitaId", trans, "um lançamento");
-  checar(dados.impostos, "pagamentoId", trans, "um lançamento");
-  checar(dados.distribuicoes, "transacaoId", trans, "um lançamento");
-  checar(dados.distribuicoes, "socioId", socios, "um sócio");
-  checar(dados.movimentosCaixinha, "transacaoId", trans, "um lançamento");
-  checar(dados.movimentosCaixinha, "caixinhaId", caixinhas, "uma caixinha");
+  checar(dados.impostos, "receitaId", trans, t.backup.refUmLancamento);
+  checar(dados.impostos, "pagamentoId", trans, t.backup.refUmLancamento);
+  checar(dados.distribuicoes, "transacaoId", trans, t.backup.refUmLancamento);
+  checar(dados.distribuicoes, "socioId", socios, t.backup.refUmSocio);
+  checar(dados.movimentosCaixinha, "transacaoId", trans, t.backup.refUmLancamento);
+  checar(dados.movimentosCaixinha, "caixinhaId", caixinhas, t.backup.refUmaCaixinha);
+
+  // FK que é 1:1 no schema (@unique). Dois registros com o mesmo valor passam
+  // por `checar` — ambos apontam para um lançamento que existe — mas quebram a
+  // unique no meio da transação, com metade dos dados já dentro. `fin_transacao`
+  // tem uma distribuição e um movimento de caixinha, nunca dois.
+  const unico = (lista: Registro[], campo: string, rotulo: string) => {
+    const vistos = new Set<string>();
+    const repetidos = new Set<string>();
+    for (const r of lista) {
+      const v = r[campo];
+      if (typeof v !== "string" || !v) continue;
+      if (vistos.has(v)) repetidos.add(v);
+      vistos.add(v);
+    }
+    if (repetidos.size > 0) {
+      const amostra = [...repetidos].slice(0, 3).join(", ");
+      problemas.push(
+        t.backup.dividemCampo(rotulo, repetidos.size, campo, amostra, repetidos.size > 3)
+      );
+    }
+  };
+
+  unico(dados.distribuicoes, "transacaoId", ROTULOS.distribuicoes);
+  unico(dados.movimentosCaixinha, "transacaoId", ROTULOS.movimentosCaixinha);
 
   return problemas;
 }

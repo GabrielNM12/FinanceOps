@@ -1,31 +1,81 @@
 /**
- * Rotas que não exigem sessão.
+ * Rotas que não exigem sessão + tradução de caminhos por locale.
  *
  * Vive num módulo sem dependência nenhuma de propósito: é consumido pelo
- * middleware (runtime Edge) e por componentes de cliente.
+ * middleware (runtime Edge) e por componentes de cliente. Lê
+ * `process.env.NEXT_PUBLIC_APP_LOCALE` direto em vez de importar `@/lib/i18n`
+ * para não arrastar os dicionários inteiros para o bundle Edge.
+ *
+ * Os caminhos em português são as PASTAS reais do App Router. Quando o locale é
+ * `en`, o `next.config.mjs` reescreve os caminhos em inglês para essas pastas
+ * (rewrites) e redireciona os caminhos em português para o inglês (redirects).
+ * O middleware roda ANTES dos rewrites, então enxerga o caminho em inglês — por
+ * isso as listas abaixo já saem localizadas.
  */
 
+const EN = process.env.NEXT_PUBLIC_APP_LOCALE === "en";
+
+const PT_PATHS = {
+  home: "/",
+  login: "/login",
+  entrar: "/entrar",
+  transacoes: "/transacoes",
+  impostos: "/impostos",
+  caixinhas: "/caixinhas",
+  recorrentes: "/recorrentes",
+  importar: "/importar",
+  auditoria: "/auditoria",
+  configuracoes: "/configuracoes",
+};
+
+const EN_OVERRIDES = {
+  transacoes: "/transactions",
+  impostos: "/taxes",
+  caixinhas: "/reserves",
+  recorrentes: "/recurring",
+  importar: "/import",
+  auditoria: "/audit",
+  configuracoes: "/settings",
+};
+
+export type RotaKey = keyof typeof PT_PATHS;
+
+/** Pares [caminho em inglês, pasta em português] — usado pelo next.config. */
+export const MAPA_ROTAS_EN: [string, string][] = Object.entries(EN_OVERRIDES).map(
+  ([k, en]) => [en, PT_PATHS[k as RotaKey]]
+);
+
+/** Caminho público de uma rota lógica, no locale corrente do build. */
+export function pathFor(en: boolean, k: RotaKey): string {
+  return en && k in EN_OVERRIDES ? EN_OVERRIDES[k as keyof typeof EN_OVERRIDES] : PT_PATHS[k];
+}
+
+export const PATHS: Record<RotaKey, string> = Object.fromEntries(
+  (Object.keys(PT_PATHS) as RotaKey[]).map((k) => [k, pathFor(EN, k)])
+) as Record<RotaKey, string>;
+
+export function rota(k: RotaKey): string {
+  return PATHS[k];
+}
+
 /** Telas que existem justamente para quem ainda não entrou. */
-export const ROTAS_PUBLICAS = ["/login"];
+export const ROTAS_PUBLICAS = [PATHS.login];
 
 /**
  * `/entrar` é o próprio consumo do link do e-mail — bloqueá-lo por falta de
- * sessão criaria um ciclo: para entrar seria preciso já estar dentro.
- *
- * `/api/v1` é a API de integração, cuja autenticação é o Bearer token
- * (INTEGRACAO.md, seção 7): um sistema consumindo dados não tem cookie.
+ * sessão criaria um ciclo. `/api/v1` é a API de integração (Bearer token).
+ * Nenhum dos dois é traduzido.
  */
-export const PREFIXOS_LIVRES = ["/entrar", "/api/v1"];
+export const PREFIXOS_LIVRES = [PATHS.entrar, "/api/v1"];
 
 /**
- * Mensagem única para sessão perdida.
- *
- * As server actions lançam exatamente este texto, e o cliente compara por ele
- * para saber que precisa mandar a pessoa ao login. Comparar por string é frágil
- * — por isso a string mora aqui, num só lugar, em vez de repetida em 38 arquivos.
+ * Mensagem única para sessão perdida. As server actions lançam exatamente este
+ * texto e o cliente compara por ele. Fica aqui (e não em `@/lib/i18n`) pelo
+ * mesmo motivo de bundle do resto do módulo.
  */
-export const MSG_SESSAO_EXPIRADA =
-  "Sessão expirada ou acesso revogado. Entre novamente.";
+export const MSG_SESSAO_EXPIRADA = EN
+  ? "Session expired or access revoked. Sign in again."
+  : "Sessão expirada ou acesso revogado. Entre novamente.";
 
 /**
  * Manda para o login guardando de onde a pessoa veio.
@@ -38,7 +88,7 @@ export function irParaLogin(motivo?: "expirou") {
   if (typeof window === "undefined") return;
 
   const destino = window.location.pathname + window.location.search;
-  const url = new URL("/login", window.location.origin);
+  const url = new URL(PATHS.login, window.location.origin);
   if (destino && destino !== "/") url.searchParams.set("destino", destino);
   if (motivo) url.searchParams.set("erro", "sessao_expirada");
 

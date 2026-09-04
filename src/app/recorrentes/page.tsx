@@ -17,6 +17,7 @@ import {
   gerarRecorrentesAgora,
 } from "@/actions/cadastros";
 import { formatarData } from "@/lib/datas";
+import { t } from "@/lib/i18n";
 
 type Dados = {
   totais: { entradaCentavos: number; saidaCentavos: number };
@@ -43,8 +44,8 @@ export default function RecorrentesPage() {
 
   const cabecalho = (
     <PageTitle
-      titulo="Recorrentes"
-      descricao="Regras que geram lançamentos automaticamente todo mês."
+      titulo={t.recurring.title}
+      descricao={t.recurring.subtitle}
       acao={
         <button
           disabled={acao.pendente || carregando}
@@ -52,13 +53,13 @@ export default function RecorrentesPage() {
             acao.executar(async () => {
               const r = await gerarRecorrentesAgora();
               return r.criados === 0
-                ? "Nada pendente — todos os meses vencidos já foram gerados."
-                : `${r.criados} lançamento(s) gerado(s).`;
+                ? t.recurring.nadaPendente
+                : t.recurring.gerados(r.criados);
             })
           }
           className="btn-ghost"
         >
-          <RefreshCw size={15} /> Gerar pendentes agora
+          <RefreshCw size={15} /> {t.recurring.gerarAgora}
         </button>
       }
     />
@@ -93,7 +94,7 @@ export default function RecorrentesPage() {
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
         <div className="card p-4">
           <div className="text-xs uppercase tracking-wide text-slate-500">
-            Saídas fixas / mês
+            {t.recurring.kpiSaidas}
           </div>
           <div className="num mt-1 text-2xl font-semibold text-red-600">
             <Dinheiro centavos={totais.saidaCentavos} />
@@ -101,7 +102,7 @@ export default function RecorrentesPage() {
         </div>
         <div className="card p-4">
           <div className="text-xs uppercase tracking-wide text-slate-500">
-            Entradas fixas / mês
+            {t.recurring.kpiEntradas}
           </div>
           <div className="num mt-1 text-2xl font-semibold text-emerald-600">
             <Dinheiro centavos={totais.entradaCentavos} />
@@ -109,7 +110,7 @@ export default function RecorrentesPage() {
         </div>
         <div className="card p-4">
           <div className="text-xs uppercase tracking-wide text-slate-500">
-            Resultado fixo / mês
+            {t.recurring.kpiResultado}
           </div>
           <div className="num mt-1 text-2xl font-semibold text-navy-900">
             <Dinheiro centavos={totais.entradaCentavos - totais.saidaCentavos} sinal />
@@ -117,7 +118,7 @@ export default function RecorrentesPage() {
         </div>
       </div>
 
-      <Secao titulo="Novo recorrente">
+      <Secao titulo={t.recurring.novo}>
         <form
           ref={form}
           onSubmit={(e) => {
@@ -126,33 +127,33 @@ export default function RecorrentesPage() {
             acao.executar(async () => {
               await criarRecorrente(fd);
               form.current?.reset();
-              return "Recorrente criado. Os meses já vencidos foram gerados.";
+              return t.recurring.criado;
             });
           }}
           className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
           <div className="lg:col-span-2">
-            <label className="label">Descrição</label>
+            <label className="label">{t.recurring.fDescricao}</label>
             <input
               name="descricao"
               required
               className="input"
-              placeholder="Google Workspace"
+              placeholder={t.recurring.phDescricao}
             />
           </div>
           <div>
-            <label className="label">Tipo</label>
+            <label className="label">{t.recurring.fTipo}</label>
             <select name="tipo" className="input">
-              <option value="SAIDA">Saída</option>
-              <option value="ENTRADA">Entrada</option>
+              <option value="SAIDA">{t.recurring.optSaida}</option>
+              <option value="ENTRADA">{t.recurring.optEntrada}</option>
             </select>
           </div>
           <div>
-            <label className="label">Valor</label>
-            <input name="valor" required className="input" placeholder="245,00" />
+            <label className="label">{t.recurring.fValor}</label>
+            <input name="valor" required className="input" placeholder={t.recurring.phValor} />
           </div>
           <div>
-            <label className="label">Categoria</label>
+            <label className="label">{t.recurring.fCategoria}</label>
             <select name="categoriaId" className="input">
               <option value="">—</option>
               {dados.categorias.map((c) => (
@@ -163,7 +164,7 @@ export default function RecorrentesPage() {
             </select>
           </div>
           <div>
-            <label className="label">Dia do vencimento</label>
+            <label className="label">{t.recurring.fDiaVencimento}</label>
             <input
               name="diaVencimento"
               type="number"
@@ -174,7 +175,7 @@ export default function RecorrentesPage() {
             />
           </div>
           <div>
-            <label className="label">Início</label>
+            <label className="label">{t.recurring.fInicio}</label>
             <input
               type="date"
               name="inicio"
@@ -184,35 +185,32 @@ export default function RecorrentesPage() {
             />
           </div>
           <div>
-            <label className="label">Fim (opcional)</label>
+            <label className="label">{t.recurring.fFim}</label>
             <input type="date" name="fim" className="input" />
           </div>
           <div className="lg:col-span-4">
             <button disabled={acao.pendente} className="btn-teal">
-              {acao.pendente ? "Salvando..." : "Criar recorrente"}
+              {acao.pendente ? t.common.saving : t.recurring.criarRecorrente}
             </button>
-            <p className="mt-2 text-xs text-slate-500">
-              Ao salvar, os meses já vencidos desde a data de início são gerados na
-              hora, como lançamentos pendentes de pagamento.
-            </p>
+            <p className="mt-2 text-xs text-slate-500">{t.recurring.novoNota}</p>
           </div>
         </form>
       </Secao>
 
       <div className="mt-6">
         {dados.recorrentes.length === 0 ? (
-          <Vazio>Nenhum recorrente cadastrado.</Vazio>
+          <Vazio>{t.recurring.vazio}</Vazio>
         ) : (
           <div className="card overflow-x-auto">
             <table className="hidden w-full md:table">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="th">Descrição</th>
-                  <th className="th">Categoria</th>
-                  <th className="th">Vencimento</th>
-                  <th className="th">Período</th>
-                  <th className="th text-right">Valor</th>
-                  <th className="th text-right">Gerados</th>
+                  <th className="th">{t.recurring.thDescricao}</th>
+                  <th className="th">{t.recurring.thCategoria}</th>
+                  <th className="th">{t.recurring.thVencimento}</th>
+                  <th className="th">{t.recurring.thPeriodo}</th>
+                  <th className="th text-right">{t.recurring.thValor}</th>
+                  <th className="th text-right">{t.recurring.thGerados}</th>
                   <th className="th"></th>
                 </tr>
               </thead>
@@ -222,14 +220,14 @@ export default function RecorrentesPage() {
                     <td className="td">
                       <div className="font-medium text-navy-900">{r.descricao}</div>
                       <Tag cor={r.tipo === "ENTRADA" ? "#16a34a" : "#ef4444"}>
-                        {r.tipo === "ENTRADA" ? "entrada" : "saída"}
+                        {r.tipo === "ENTRADA" ? t.recurring.tagEntrada : t.recurring.tagSaida}
                       </Tag>
                     </td>
                     <td className="td text-slate-600">{r.categoria ?? "—"}</td>
-                    <td className="td text-slate-600">dia {r.diaVencimento}</td>
+                    <td className="td text-slate-600">{t.recurring.dia(r.diaVencimento)}</td>
                     <td className="td text-xs text-slate-500">
                       {formatarData(new Date(r.inicio))} →{" "}
-                      {r.fim ? formatarData(new Date(r.fim)) : "sem fim"}
+                      {r.fim ? formatarData(new Date(r.fim)) : t.recurring.semFim}
                     </td>
                     <td className="td text-right font-medium">
                       <Dinheiro centavos={r.valorCentavos} />
@@ -244,14 +242,14 @@ export default function RecorrentesPage() {
                           }
                           className="rounded px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
                         >
-                          {r.ativo ? "pausar" : "reativar"}
+                          {r.ativo ? t.recurring.pausar : t.recurring.reativar}
                         </button>
                         <button
                           disabled={acao.pendente}
                           onClick={() => acao.executar(() => excluirRecorrente(r.id))}
                           className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
                         >
-                          excluir
+                          {t.common.delete}
                         </button>
                       </div>
                     </td>
@@ -270,11 +268,11 @@ export default function RecorrentesPage() {
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
                         <Tag cor={r.tipo === "ENTRADA" ? "#16a34a" : "#ef4444"}>
-                          {r.tipo === "ENTRADA" ? "entrada" : "saída"}
+                          {r.tipo === "ENTRADA" ? t.recurring.tagEntrada : t.recurring.tagSaida}
                         </Tag>
-                        <span>dia {r.diaVencimento}</span>
+                        <span>{t.recurring.dia(r.diaVencimento)}</span>
                         {r.categoria && <span>· {r.categoria}</span>}
-                        <span>· {r.gerados} gerados</span>
+                        <span>· {t.recurring.geradosLabel(r.gerados)}</span>
                       </div>
                     </div>
                     <Dinheiro centavos={r.valorCentavos} className="shrink-0 font-medium" />
@@ -286,14 +284,14 @@ export default function RecorrentesPage() {
                       onClick={() => acao.executar(() => alternarRecorrente(r.id, !r.ativo))}
                       className="rounded px-3 py-1.5 text-xs text-slate-600 active:bg-slate-100"
                     >
-                      {r.ativo ? "pausar" : "reativar"}
+                      {r.ativo ? t.recurring.pausar : t.recurring.reativar}
                     </button>
                     <button
                       disabled={acao.pendente}
                       onClick={() => acao.executar(() => excluirRecorrente(r.id))}
                       className="rounded px-3 py-1.5 text-xs text-red-600 active:bg-red-50"
                     >
-                      excluir
+                      {t.common.delete}
                     </button>
                   </div>
                 </li>
@@ -303,12 +301,7 @@ export default function RecorrentesPage() {
         )}
       </div>
 
-      <p className="mt-4 text-xs text-slate-500">
-        Os lançamentos são materializados como registros reais, não calculados na
-        hora. Isso permite editar o valor do mês (a conta de luz nunca vem igual) e
-        faz o histórico bater com o extrato bancário. Excluir a regra não apaga os
-        lançamentos já gerados.
-      </p>
+      <p className="mt-4 text-xs text-slate-500">{t.recurring.notaRodape}</p>
     </>
   );
 }

@@ -2,7 +2,7 @@
 
 import { AlertTriangle } from "lucide-react";
 import { useDados } from "@/hooks/useDados";
-import { AVISO_DEMO } from "@/lib/modo-demo";
+import { t } from "@/lib/i18n";
 
 type Sessao = { demo?: boolean };
 
@@ -28,7 +28,7 @@ export default function TarjaDemo() {
       className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-amber-400 px-4 py-1.5 text-center text-[11px] font-medium leading-tight text-amber-950 sm:text-xs"
     >
       <AlertTriangle size={13} className="hidden shrink-0 sm:block" />
-      <span>{AVISO_DEMO}</span>
+      <span>{t.demo.aviso}</span>
     </div>
   );
 }

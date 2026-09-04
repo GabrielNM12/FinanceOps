@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Mail, AlertTriangle } from "lucide-react";
 import { pedirAcesso } from "@/actions/acesso";
+import { t } from "@/lib/i18n";
 
 /**
  * Tela de entrada.
@@ -39,24 +40,21 @@ export default function LoginPage() {
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-teal-50 text-teal-600">
                 <Mail size={22} />
               </div>
-              <h1 className="text-base font-semibold text-navy-900">Confira seu e-mail</h1>
+              <h1 className="text-base font-semibold text-navy-900">{t.login.confiraEmail}</h1>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                Se <strong>{enviado}</strong> estiver cadastrado, o link de acesso
-                chega em instantes. Ele vale por 15 minutos e funciona uma vez só.
+                {t.login.enviadoPara(enviado)}
               </p>
               <button
                 onClick={() => setEnviado(null)}
                 className="mt-5 text-xs text-teal-700 underline"
               >
-                usar outro e-mail
+                {t.login.usarOutro}
               </button>
             </div>
           ) : (
             <>
-              <h1 className="text-base font-semibold text-navy-900">Entrar</h1>
-              <p className="mt-1 text-sm text-slate-500">
-                Enviamos um link de acesso para o seu e-mail. Não há senha.
-              </p>
+              <h1 className="text-base font-semibold text-navy-900">{t.login.entrar}</h1>
+              <p className="mt-1 text-sm text-slate-500">{t.login.semSenha}</p>
 
               {(erro || erroDeUrl) && (
                 <div className="mt-4 flex gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
@@ -64,12 +62,12 @@ export default function LoginPage() {
                   <span>
                     {erro ??
                       (erroDeUrl === "sessao_expirada"
-                        ? "Sua sessão expirou. Peça um novo link para continuar."
+                        ? t.login.erroSessao
                         : erroDeUrl === "link_expirado"
-                        ? "Este link expirou ou já foi usado. Peça um novo."
+                        ? t.login.erroLink
                         : erroDeUrl === "sem_acesso"
-                          ? "Este acesso não está mais ativo."
-                          : "Não foi possível entrar. Tente novamente.")}
+                          ? t.login.erroSemAcesso
+                          : t.login.erroGenerico)}
                   </span>
                 </div>
               )}
@@ -87,12 +85,12 @@ export default function LoginPage() {
                       if (r.ok) setEnviado(email);
                       else setErro(r.erro);
                     } catch {
-                      setErro("Falha ao enviar. Tente de novo em instantes.");
+                      setErro(t.login.falhaEnviar);
                     }
                   });
                 }}
               >
-                <label className="label">E-mail</label>
+                <label className="label">{t.login.email}</label>
                 <input
                   name="email"
                   type="email"
@@ -100,10 +98,10 @@ export default function LoginPage() {
                   autoFocus
                   autoComplete="email"
                   className="input"
-                  placeholder="voce@korvantis.com"
+                  placeholder={t.login.phEmail}
                 />
                 <button disabled={pendente} className="btn-teal mt-4 w-full justify-center">
-                  {pendente ? "Enviando..." : "Enviar link de acesso"}
+                  {pendente ? t.login.enviando : t.login.enviarLink}
                 </button>
               </form>
             </>
@@ -111,7 +109,7 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-6 text-center text-xs leading-relaxed text-slate-400">
-          Só e-mails cadastrados como sócio ativo têm acesso.
+          {t.login.rodape}
         </p>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { exigirAcesso } from "@/lib/sessao";
 import { registrar } from "@/lib/auditoria";
+import { t } from "@/lib/i18n";
 import {
   validarBackup,
   conferirReferencias,
@@ -101,7 +102,7 @@ export async function analisarBackup(fd: FormData): Promise<PreviewBackup> {
   const sessao = await exigirAcesso();
   const arquivo = fd.get("arquivo") as File | null;
   if (!arquivo || arquivo.size === 0) {
-    throw new Error("Selecione o arquivo de backup (.json).");
+    throw new Error(t.errors.selecioneBackupJson);
   }
 
   const texto = await arquivo.text();
@@ -110,9 +111,7 @@ export async function analisarBackup(fd: FormData): Promise<PreviewBackup> {
   try {
     bruto = JSON.parse(texto);
   } catch {
-    throw new Error(
-      "Arquivo não é um JSON válido. Confira se baixou o backup completo, e não o CSV."
-    );
+    throw new Error(t.errors.arquivoNaoJson);
   }
 
   const v = validarBackup(bruto);
@@ -157,7 +156,7 @@ export async function restaurarBackup(conteudo: string, modo: ModoRestauracao) {
   const dados = v.backup.dados;
   const problemas = conferirReferencias(dados);
   if (problemas.length > 0) {
-    throw new Error(`Backup inconsistente: ${problemas.join(" ")}`);
+    throw new Error(t.errors.backupInconsistente(problemas.join(" ")));
   }
 
   const inseridos: Record<string, number> = {};

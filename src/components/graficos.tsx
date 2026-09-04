@@ -19,6 +19,7 @@ import {
 } from "recharts";
 import { formatarBRL, formatarBRLCompacto } from "@/lib/money";
 import { formatarCompetencia } from "@/lib/datas";
+import { t } from "@/lib/i18n";
 
 /**
  * Todos os gráficos recebem CENTAVOS e formatam na borda.
@@ -74,13 +75,13 @@ export function GraficoFluxoMensal({ dados }: { dados: PontoMensal[] }) {
         <YAxis {...eixoY} />
         <Tooltip {...tooltipProps} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Bar dataKey="faturadoCentavos" name="Faturado" fill="#2eb3c7" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="despesaCentavos" name="Despesas" fill="#94a3b8" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="impostoCentavos" name="Impostos" fill="#ef4444" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="faturadoCentavos" name={t.charts.billed} fill="#2eb3c7" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="despesaCentavos" name={t.charts.expenses} fill="#94a3b8" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="impostoCentavos" name={t.charts.taxes} fill="#ef4444" radius={[4, 4, 0, 0]} />
         <Line
           type="monotone"
           dataKey="lucroCentavos"
-          name="Lucro"
+          name={t.charts.profit}
           stroke="#1c2b3d"
           strokeWidth={2.5}
           dot={{ r: 3 }}
@@ -147,7 +148,7 @@ export function GraficoReceitaPorCliente({
           tickLine={false}
         />
         <Tooltip {...tooltipProps} />
-        <Bar dataKey="valorCentavos" name="Receita" fill="#2eb3c7" radius={[0, 4, 4, 0]} />
+        <Bar dataKey="valorCentavos" name={t.charts.revenue} fill="#2eb3c7" radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -178,8 +179,8 @@ export function GraficoDistribuicaoSocios({
         />
         <Tooltip {...tooltipProps} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Bar dataKey="lucroCentavos" name="Lucros" stackId="a" fill="#2eb3c7" radius={[0, 0, 0, 0]} />
-        <Bar dataKey="proLaboreCentavos" name="Pró-labore" stackId="a" fill="#f59e0b" radius={[0, 4, 4, 0]} />
+        <Bar dataKey="lucroCentavos" name={t.charts.profits} stackId="a" fill="#2eb3c7" radius={[0, 0, 0, 0]} />
+        <Bar dataKey="proLaboreCentavos" name={t.charts.proLabore} stackId="a" fill="#f59e0b" radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -211,7 +212,7 @@ export function GraficoProjecaoCaixa({
         <Area
           type="monotone"
           dataKey="saldoProjetadoCentavos"
-          name="Saldo projetado"
+          name={t.charts.projectedBalance}
           stroke="#2eb3c7"
           strokeWidth={2.5}
           fill="url(#grad-caixa)"
@@ -224,7 +225,7 @@ export function GraficoProjecaoCaixa({
 function SemDados() {
   return (
     <div className="flex h-[220px] items-center justify-center text-sm text-slate-400">
-      Sem dados no período.
+      {t.charts.noData}
     </div>
   );
 }

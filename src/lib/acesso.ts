@@ -5,6 +5,7 @@
  * segurança do sistema que precisa ser lida e conferida por uma pessoa, e não
  * deve estar enterrada num callback.
  */
+import { t } from "@/lib/i18n";
 
 export type SocioAutorizado = {
   id: string;
@@ -71,6 +72,6 @@ export function podeEntrar(
  * de quem trabalha aqui, para qualquer pessoa na internet.
  */
 export function mensagemDeRecusa(motivo: Decisao["motivo"]): string {
-  if (motivo === "SEM_EMAIL") return "Informe um e-mail válido.";
-  return "Se este e-mail estiver cadastrado, o link de acesso chegará em instantes.";
+  if (motivo === "SEM_EMAIL") return t.errors.emailValido;
+  return t.errors.seCadastradoChega;
 }

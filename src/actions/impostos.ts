@@ -7,6 +7,7 @@ import { calcularAliquota } from "@/lib/simples";
 import { aplicarBps } from "@/lib/money";
 import { exigirAcesso } from "@/lib/sessao";
 import { registrar } from "@/lib/auditoria";
+import { t } from "@/lib/i18n";
 
 function revalidar() {
   for (const p of ["/", "/impostos", "/transacoes"]) revalidatePath(p);
@@ -17,7 +18,7 @@ async function categoriaImposto() {
   const existente = await prisma.categoria.findFirst({ where: { ehImposto: true } });
   if (existente) return existente;
   return prisma.categoria.create({
-    data: { nome: "Impostos (DAS)", natureza: "SAIDA", ehImposto: true, cor: "#ef4444" },
+    data: { nome: t.generated.categoriaImpostos, natureza: "SAIDA", ehImposto: true, cor: "#ef4444" },
   });
 }
 
@@ -30,7 +31,7 @@ async function categoriaImposto() {
  */
 export async function pagarImpostos(ids: string[], dataPagamentoISO: string) {
   const sessao = await exigirAcesso();
-  if (ids.length === 0) throw new Error("Selecione ao menos uma guia.");
+  if (ids.length === 0) throw new Error(t.errors.selecioneUmaGuia);
 
   const dataPagamento = deInputDate(dataPagamentoISO);
   const categoria = await categoriaImposto();
@@ -43,7 +44,7 @@ export async function pagarImpostos(ids: string[], dataPagamentoISO: string) {
     const guias = await tx.imposto.findMany({
       where: { id: { in: ids }, status: "PROVISIONADO" },
     });
-    if (guias.length === 0) throw new Error("Nenhuma guia provisionada encontrada.");
+    if (guias.length === 0) throw new Error(t.errors.nenhumaGuiaProvisionada);
 
     const soma = guias.reduce((s, g) => s + g.valorCentavos, 0);
 
@@ -51,12 +52,12 @@ export async function pagarImpostos(ids: string[], dataPagamentoISO: string) {
       data: {
         criadoPorId: sessao.socio?.id ?? null,
         tipo: "SAIDA",
-        descricao: `DAS — ${guias.length} lançamento(s)`,
+        descricao: t.generated.dasLancamentos(guias.length),
         valorCentavos: soma,
         categoriaId: categoria.id,
         dataCompetencia: dataPagamento,
         dataCaixa: dataPagamento,
-        observacoes: "Guia de imposto gerada a partir de provisões.",
+        observacoes: t.generated.guiaGerada,
       },
     });
 
@@ -144,7 +145,7 @@ export async function recalcularProvisoes() {
 
 export async function ajustarProvisao(id: string, valorCentavos: number) {
   const sessao = await exigirAcesso();
-  if (valorCentavos < 0) throw new Error("Valor inválido.");
+  if (valorCentavos < 0) throw new Error(t.errors.valorInvalido);
   await prisma.imposto.update({
     where: { id },
     data: { valorCentavos, aliquotaBps: null },

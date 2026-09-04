@@ -8,6 +8,7 @@
  * 2. Os testes rodam sem banco. Uma função de formatação que exige conexão não
  *    é testável, e é justamente ela que decide o que a pessoa lê na tela.
  */
+import { t } from "@/lib/i18n";
 
 export const ACOES = [
   "CRIAR",
@@ -51,39 +52,12 @@ export type RegistroAuditoria = {
 // Formatação — pura, para poder ser testada
 // ---------------------------------------------------------------------------
 
-const VERBOS: Record<Acao, string> = {
-  CRIAR: "criou",
-  ATUALIZAR: "alterou",
-  EXCLUIR: "excluiu",
-  CONFIRMAR: "confirmou",
-  DESFAZER: "desfez",
-  PAGAR: "pagou",
-  ESTORNAR: "estornou",
-  GUARDAR: "guardou",
-  RESGATAR: "resgatou",
-  IMPORTAR: "importou",
-  RESTAURAR: "restaurou",
-  ACESSO: "acessou",
-};
-
-const ROTULO_ENTIDADE: Record<Entidade, string> = {
-  LANCAMENTO: "lançamento",
-  IMPOSTO: "imposto",
-  CAIXINHA: "caixinha",
-  SOCIO: "sócio",
-  CLIENTE: "cliente",
-  CATEGORIA: "categoria",
-  RECORRENTE: "recorrente",
-  BACKUP: "backup",
-  CONFIG: "configuração",
-};
-
 export function verboDe(acao: string): string {
-  return VERBOS[acao as Acao] ?? acao.toLowerCase();
+  return t.auditLabels.verbos[acao as Acao] ?? acao.toLowerCase();
 }
 
 export function rotuloEntidade(entidade: string): string {
-  return ROTULO_ENTIDADE[entidade as Entidade] ?? entidade.toLowerCase();
+  return t.auditLabels.entidades[entidade as Entidade] ?? entidade.toLowerCase();
 }
 
 /** Cor do selo por ação. Destrutivo em vermelho, dinheiro saindo em âmbar. */

@@ -15,6 +15,8 @@ import {
 } from "@/lib/token-acesso";
 import { assuntoAcesso, htmlAcesso, textoAcesso } from "@/lib/email-acesso";
 import { urlPublica } from "@/lib/url-publica";
+import { rota } from "@/lib/rotas";
+import { t } from "@/lib/i18n";
 
 /**
  * URL pública do app. A regra mora em `@/lib/url-publica` porque o link do
@@ -30,9 +32,7 @@ async function enviarLink(email: string, url: string) {
 
   if (!temSMTP) {
     if (process.env.NODE_ENV === "production") {
-      throw new Error(
-        "SMTP não configurado. Defina SMTP_HOST, SMTP_USER, SMTP_PASS e EMAIL_FROM."
-      );
+      throw new Error(t.errors.smtpNaoConfigurado);
     }
     // Em desenvolvimento o link vai para o console — dá para trabalhar numa
     // máquina nova sem credencial de e-mail nenhuma.
@@ -84,7 +84,7 @@ async function enviarLink(email: string, url: string) {
 
   const recusados = r.rejected.filter(Boolean);
   if (recusados.length > 0) {
-    throw new Error(`O servidor de e-mail recusou: ${recusados.join(", ")}`);
+    throw new Error(t.errors.servidorEmailRecusou(recusados.join(", ")));
   }
 
   // Confirmação no log do servidor. Sem isto, "não chegou" é indistinguível de
@@ -152,7 +152,7 @@ export async function pedirAcesso(
     await tx.tokenAcesso.deleteMany({ where: { expiraEm: { lt: new Date() } } });
   });
 
-  const url = new URL("/entrar", urlBase());
+  const url = new URL(rota("entrar"), urlBase());
   url.searchParams.set("t", token);
   if (destino) url.searchParams.set("destino", destino);
 
@@ -166,12 +166,12 @@ export async function pedirAcesso(
     await prisma.tokenAcesso.deleteMany({ where: { email } });
     return {
       ok: false,
-      erro: "Não consegui enviar o e-mail. Avise quem administra o servidor.",
+      erro: t.errors.naoConsegueEnviarEmail,
     };
   }
 }
 
 export async function sair() {
   cookies().delete(NOME_COOKIE);
-  redirect("/login");
+  redirect(rota("login"));
 }

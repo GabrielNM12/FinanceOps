@@ -1,5 +1,6 @@
 import CarregandoTela from "@/components/CarregandoTela";
 import { EsqueletoCaixinhas } from "@/components/Esqueleto";
+import { t } from "@/lib/i18n";
 
 /**
  * Mostrado enquanto o JavaScript desta rota carrega.
@@ -14,7 +15,7 @@ import { EsqueletoCaixinhas } from "@/components/Esqueleto";
  */
 export default function Carregando() {
   return (
-    <CarregandoTela titulo="Caixinhas" descricao="Separe dinheiro por objetivo. Guardar tira da conta e põe na caixinha.">
+    <CarregandoTela titulo={t.reserves.title} descricao={t.reserves.subtitle}>
       <EsqueletoCaixinhas />
     </CarregandoTela>
   );

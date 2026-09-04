@@ -5,12 +5,13 @@
  * `<style>` em boa parte dos clientes. Por isso tudo aqui é tabela e estilo
  * inline — feio de ler, mas é o que renderiza igual no Gmail, Outlook e celular.
  */
+import { t } from "@/lib/i18n";
 
 const NAVY = "#14293f";
 const TEAL = "#2eb3c7";
 
 export function assuntoAcesso() {
-  return "Seu acesso ao FinanceOps";
+  return t.email.assunto;
 }
 
 export function htmlAcesso({
@@ -23,7 +24,7 @@ export function htmlAcesso({
   minutos: number;
 }) {
   return `<!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="${t.email.lang}">
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:32px 16px;">
     <tr><td align="center">
@@ -35,10 +36,9 @@ export function htmlAcesso({
         </td></tr>
 
         <tr><td style="padding:32px 28px 8px;">
-          <h1 style="margin:0 0 12px;font-size:19px;color:${NAVY};font-weight:600;">Entrar no FinanceOps</h1>
+          <h1 style="margin:0 0 12px;font-size:19px;color:${NAVY};font-weight:600;">${t.email.titulo}</h1>
           <p style="margin:0;font-size:14px;line-height:1.6;color:#475569;">
-            Clique no botão abaixo para acessar. O link vale por
-            <strong>${minutos} minutos</strong> e funciona uma única vez.
+            ${t.email.corpo(minutos)}
           </p>
         </td></tr>
 
@@ -46,21 +46,20 @@ export function htmlAcesso({
           <a href="${url}"
              style="display:inline-block;background:${TEAL};color:#ffffff;text-decoration:none;
                     padding:13px 32px;border-radius:8px;font-size:15px;font-weight:600;">
-            Acessar o FinanceOps
+            ${t.email.botao}
           </a>
         </td></tr>
 
         <tr><td style="padding:0 28px 24px;">
           <p style="margin:0 0 6px;font-size:12px;color:#94a3b8;">
-            Se o botão não funcionar, copie este endereço:
+            ${t.email.seNaoFuncionar}
           </p>
           <p style="margin:0;font-size:12px;color:#64748b;word-break:break-all;">${url}</p>
         </td></tr>
 
         <tr><td style="padding:16px 28px 24px;border-top:1px solid #e2e8f0;">
           <p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8;">
-            Se você não pediu este acesso, ignore este e-mail — ninguém entra sem
-            clicar no link. Enviado por ${host}.
+            ${t.email.rodape(host)}
           </p>
         </td></tr>
 
@@ -74,11 +73,11 @@ export function htmlAcesso({
 /** Versão texto puro. Alguns clientes só mostram esta, e filtros de spam gostam. */
 export function textoAcesso({ url, minutos }: { url: string; minutos: number }) {
   return [
-    "Entrar no FinanceOps",
+    t.email.titulo,
     "",
-    `Acesse por este link (vale ${minutos} minutos, uso único):`,
+    t.email.textoLink(minutos),
     url,
     "",
-    "Se você não pediu este acesso, ignore este e-mail.",
+    t.email.textoRodape,
   ].join("\n");
 }

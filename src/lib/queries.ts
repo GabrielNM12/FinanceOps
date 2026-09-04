@@ -16,6 +16,7 @@ import {
   rangeCompetencias,
   competenciaDe,
 } from "./datas";
+import { t } from "@/lib/i18n";
 
 /**
  * Camada de leitura do dashboard.
@@ -301,7 +302,7 @@ export async function despesaPorCategoria(
   return linhas
     .map((l) => ({
       id: l.categoriaId ?? "sem-categoria",
-      nome: l.categoriaId ? mapa.get(l.categoriaId)?.nome ?? "—" : "Sem categoria",
+      nome: l.categoriaId ? mapa.get(l.categoriaId)?.nome ?? "—" : t.queries.semCategoria,
       cor: l.categoriaId ? mapa.get(l.categoriaId)?.cor ?? "#94a3b8" : "#94a3b8",
       valorCentavos: l._sum.valorCentavos ?? 0,
     }))
@@ -329,7 +330,7 @@ export async function receitaPorCliente(
   return linhas
     .map((l) => ({
       id: l.clienteId ?? "sem-cliente",
-      nome: l.clienteId ? mapa.get(l.clienteId)?.nome ?? "—" : "Sem cliente",
+      nome: l.clienteId ? mapa.get(l.clienteId)?.nome ?? "—" : t.queries.semCliente,
       valorCentavos: l._sum.valorCentavos ?? 0,
     }))
     .filter((l) => l.valorCentavos > 0)

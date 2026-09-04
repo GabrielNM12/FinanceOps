@@ -47,6 +47,9 @@ import { verboDe, rotuloEntidade, corDaAcao, autorDe, ACOES, ENTIDADES } from ".
 import { montarUrlBase } from "../url-publica";
 import { demoLigado, EMAIL_DEMO } from "../modo-demo";
 import { validarBackup, conferirReferencias, contar, reidratar, ORDEM_INSERCAO, ORDEM_EXCLUSAO, type DadosBackup } from "../backup";
+import { pathFor, MAPA_ROTAS_EN } from "../rotas";
+import { pt as ptDict } from "../i18n/pt";
+import { en as enDict } from "../i18n/en";
 import {
   competenciaDe,
   competenciaSomar,
@@ -709,6 +712,35 @@ grupo("csv — exportação", () => {
   ok("centavos abaixo de 1 real", centavosParaCSV(5), "0,05");
   ok("negativo", centavosParaCSV(-123456), "-1234,56");
   ok("zero", centavosParaCSV(0), "0,00");
+});
+
+grupo("i18n — dicionários e caminhos", () => {
+  // Paridade estrutural recursiva pt vs en — defesa extra além do `typeof pt`.
+  const chaves = (o: unknown, prefixo = ""): string[] => {
+    if (o === null || typeof o !== "object") return [];
+    return Object.entries(o as Record<string, unknown>).flatMap(([k, v]) => {
+      const caminho = prefixo ? `${prefixo}.${k}` : k;
+      const filhos =
+        v && typeof v === "object" && !Array.isArray(v) ? chaves(v, caminho) : [];
+      return [caminho, ...filhos];
+    });
+  };
+  const kpt = chaves(ptDict).sort();
+  const ken = chaves(enDict).sort();
+  ok("pt e en têm exatamente as mesmas chaves", JSON.stringify(kpt), JSON.stringify(ken));
+
+  // Tradução de caminhos por locale.
+  ok("pathFor pt", pathFor(false, "impostos"), "/impostos");
+  ok("pathFor en", pathFor(true, "impostos"), "/taxes");
+  ok("pathFor pt — importar", pathFor(false, "importar"), "/importar");
+  ok("pathFor en — importar", pathFor(true, "importar"), "/import");
+  ok("pathFor home não muda", pathFor(true, "home"), "/");
+  ok("pathFor login não muda", pathFor(true, "login"), "/login");
+  ok(
+    "MAPA_ROTAS_EN cobre 7 telas",
+    MAPA_ROTAS_EN.length,
+    7
+  );
 });
 
 // ---------------------------------------------------------------------------

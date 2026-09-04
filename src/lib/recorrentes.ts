@@ -6,6 +6,7 @@ import {
   diaDoMesSeguro,
   Competencia,
 } from "./datas";
+import { t } from "@/lib/i18n";
 
 /**
  * Materialização de gastos recorrentes.
@@ -66,7 +67,7 @@ export async function gerarLancamentosRecorrentes(
           dataCaixa: null, // previsto — confirme o pagamento na tela
           recorrenteId: r.id,
           competenciaRef: c,
-          observacoes: "Gerado automaticamente a partir de um recorrente.",
+          observacoes: t.generated.recorrenteAuto,
         },
       });
 

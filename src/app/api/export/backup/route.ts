@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { VERSAO_BACKUP, contar, type DadosBackup } from "@/lib/backup";
 import { exigirSocio } from "@/lib/sessao";
+import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -66,8 +67,7 @@ export async function GET() {
       financeops: {
         versao: VERSAO_BACKUP,
         geradoEm: new Date().toISOString(),
-        observacao:
-          "Backup completo do FinanceOps. Restaure em Importar -> Backup completo.",
+        observacao: t.backup.observacaoArquivo,
       },
       resumo: contar(dados),
       dados,

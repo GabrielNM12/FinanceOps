@@ -19,6 +19,8 @@ import { useAcao, Avisos } from "@/hooks/useAcao";
 import { formatarCompetencia } from "@/lib/datas";
 import { iconeDe } from "@/lib/caixinha-icones";
 import { formatarBRL, formatarBps } from "@/lib/money";
+import { rota } from "@/lib/rotas";
+import { t } from "@/lib/i18n";
 import { useState } from "react";
 
 const LIMITE_FATOR_R_BPS = 2800;
@@ -97,20 +99,20 @@ export default function Dashboard() {
 
   const cabecalho = (
     <PageTitle
-      titulo="Dashboard"
+      titulo={t.dashboard.title}
       descricao={
         dados
-          ? `Posição consolidada — ${formatarCompetencia(dados.mesAtual)}`
-          : "Carregando posição consolidada…"
+          ? t.dashboard.subtitle(formatarCompetencia(dados.mesAtual))
+          : t.dashboard.subtitleLoading
       }
       acao={
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500">Regime:</span>
+          <span className="text-xs text-slate-500">{t.dashboard.regimeLabel}</span>
           <div className="inline-flex rounded-lg border border-slate-300 bg-white p-0.5">
             {(
               [
-                ["COMPETENCIA", "Competência", "Considera o mês em que o serviço foi faturado"],
-                ["CAIXA", "Caixa", "Considera o mês em que o dinheiro entrou ou saiu"],
+                ["COMPETENCIA", t.dashboard.regimeCompetencia, t.dashboard.regimeCompetenciaHint],
+                ["CAIXA", t.dashboard.regimeCaixa, t.dashboard.regimeCaixaHint],
               ] as const
             ).map(([valor, label, dica]) => (
               <button
@@ -161,11 +163,11 @@ export default function Dashboard() {
       {caixa.caixaLivreCentavos < 0 && (
         <div className="mb-4">
           <Aviso tom="erro">
-            <strong>Caixa livre negativo.</strong> O saldo em conta (
-            {formatarBRL(caixa.saldoContaCentavos)}) não cobre{" "}
-            {formatarBRL(caixa.impostoSobreRecebidoCentavos)} de imposto sobre
-            receita já recebida. Não distribua lucro até resolver isso — se
-            precisar, resgate de uma caixinha.
+            <strong>{t.dashboard.caixaLivreNegTitle}</strong>{" "}
+            {t.dashboard.caixaLivreNeg(
+              formatarBRL(caixa.saldoContaCentavos),
+              formatarBRL(caixa.impostoSobreRecebidoCentavos)
+            )}
           </Aviso>
         </div>
       )}
@@ -174,13 +176,13 @@ export default function Dashboard() {
         <div className="mb-4">
           <Aviso tom="alerta">
             <strong>
-              {formatarBRL(caixa.impostoSobreAReceberCentavos)} de imposto
+              {t.dashboard.impostoAReceberStrong(
+                formatarBRL(caixa.impostoSobreAReceberCentavos)
+              )}
             </strong>{" "}
-            está provisionado sobre receita que ainda não entrou (
-            {formatarBRL(caixa.aReceberCentavos)} a receber). Esse valor{" "}
-            <strong>não</strong> reduz o caixa livre acima — mas o DAS vence pelo
-            faturamento, não pelo recebimento. Se o cliente atrasar, a guia vence do
-            mesmo jeito.
+            {t.dashboard.impostoAReceber(formatarBRL(caixa.aReceberCentavos))}
+            <strong>{t.dashboard.impostoAReceberNao}</strong>{" "}
+            {t.dashboard.impostoAReceberFim}
           </Aviso>
         </div>
       )}
@@ -188,11 +190,10 @@ export default function Dashboard() {
       {dados.alertaGuias.quantidade > 0 && (
         <div className="mb-4">
           <Aviso tom="alerta">
-            <strong>{dados.alertaGuias.quantidade} guia(s)</strong> de imposto
-            vencendo nos próximos 15 dias, somando{" "}
-            {formatarBRL(dados.alertaGuias.totalCentavos)}.{" "}
-            <Link href="/impostos" className="underline">
-              Ver impostos
+            <strong>{t.dashboard.guiasVencendoStrong(dados.alertaGuias.quantidade)}</strong>{" "}
+            {t.dashboard.guiasVencendo(formatarBRL(dados.alertaGuias.totalCentavos))}
+            <Link href={rota("impostos")} className="underline">
+              {t.dashboard.verImpostos}
             </Link>
           </Aviso>
         </div>
@@ -200,58 +201,58 @@ export default function Dashboard() {
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         <Kpi
-          titulo="Em conta"
+          titulo={t.dashboard.kpiEmConta}
           valorCentavos={caixa.saldoContaCentavos}
-          detalhe={`Patrimônio total ${formatarBRL(caixa.patrimonioCentavos)}`}
+          detalhe={t.dashboard.kpiEmContaDetalhe(formatarBRL(caixa.patrimonioCentavos))}
         />
         <Kpi
-          titulo="Caixa livre"
+          titulo={t.dashboard.kpiCaixaLivre}
           valorCentavos={caixa.caixaLivreCentavos}
-          detalhe={`Conta − ${formatarBRL(
-            caixa.impostoSobreRecebidoCentavos
-          )} de imposto sobre recebido`}
+          detalhe={t.dashboard.kpiCaixaLivreDetalhe(
+            formatarBRL(caixa.impostoSobreRecebidoCentavos)
+          )}
           tom={caixa.caixaLivreCentavos >= 0 ? "positivo" : "negativo"}
           destaque
         />
         <Kpi
-          titulo="Guardado"
+          titulo={t.dashboard.kpiGuardado}
           valorCentavos={caixa.guardadoCentavos}
-          detalhe={`${caixinhas.length} caixinha(s)`}
+          detalhe={t.dashboard.kpiGuardadoDetalhe(caixinhas.length)}
         />
         <Kpi
-          titulo="A receber"
+          titulo={t.dashboard.kpiAReceber}
           valorCentavos={caixa.aReceberCentavos}
           detalhe={
             caixa.impostoSobreAReceberCentavos > 0
-              ? `Carrega ${formatarBRL(
-                  caixa.impostoSobreAReceberCentavos
-                )} de imposto`
-              : "Faturado e ainda não recebido"
+              ? t.dashboard.kpiAReceberComImposto(
+                  formatarBRL(caixa.impostoSobreAReceberCentavos)
+                )
+              : t.dashboard.kpiAReceberSemImposto
           }
         />
         <Kpi
-          titulo="A pagar"
+          titulo={t.dashboard.kpiAPagar}
           valorCentavos={caixa.aPagarCentavos + caixa.impostoProvisionadoCentavos}
-          detalhe={`Inclui ${formatarBRL(
-            caixa.impostoProvisionadoCentavos
-          )} de imposto em aberto`}
+          detalhe={t.dashboard.kpiAPagarDetalhe(
+            formatarBRL(caixa.impostoProvisionadoCentavos)
+          )}
           tom="alerta"
         />
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
-        <Kpi titulo="Faturado no mês" valorCentavos={mes.faturadoCentavos} />
-        <Kpi titulo="Impostos" valorCentavos={mes.impostoCentavos} tom="negativo" />
-        <Kpi titulo="Despesas" valorCentavos={mes.despesaCentavos} tom="negativo" />
+        <Kpi titulo={t.dashboard.kpiFaturadoMes} valorCentavos={mes.faturadoCentavos} />
+        <Kpi titulo={t.dashboard.kpiImpostos} valorCentavos={mes.impostoCentavos} tom="negativo" />
+        <Kpi titulo={t.dashboard.kpiDespesas} valorCentavos={mes.despesaCentavos} tom="negativo" />
         <Kpi
-          titulo="Lucro"
+          titulo={t.dashboard.kpiLucro}
           valorCentavos={mes.lucroCentavos}
           tom={mes.lucroCentavos >= 0 ? "positivo" : "negativo"}
         />
         <Kpi
-          titulo="Distribuído"
+          titulo={t.dashboard.kpiDistribuido}
           valorCentavos={mes.distribuidoCentavos}
-          detalhe={`Retido: ${formatarBRL(mes.retidoCentavos)}`}
+          detalhe={t.dashboard.kpiDistribuidoDetalhe(formatarBRL(mes.retidoCentavos))}
         />
       </div>
 
@@ -261,9 +262,10 @@ export default function Dashboard() {
 
       <div className="grid gap-6">
         <Secao
-          titulo={`Fluxo de caixa — últimos ${dados.meses} meses (${
-            regime === "CAIXA" ? "regime de caixa" : "competência"
-          })`}
+          titulo={t.dashboard.fluxoTitulo(
+            dados.meses,
+            regime === "CAIXA" ? t.dashboard.fluxoRegimeCaixa : t.dashboard.fluxoRegimeCompetencia
+          )}
           acao={
             <div className="flex gap-1">
               {[6, 12, 24].map((n) => (
@@ -276,7 +278,7 @@ export default function Dashboard() {
                       : "text-slate-500 hover:bg-slate-100"
                   }`}
                 >
-                  {n}m
+                  {t.dashboard.mesesSufixo(n)}
                 </button>
               ))}
             </div>
@@ -286,26 +288,26 @@ export default function Dashboard() {
         </Secao>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Secao titulo="Despesas por categoria">
+          <Secao titulo={t.dashboard.despesasPorCategoria}>
             <GraficoPizzaCategorias dados={dados.categorias} />
           </Secao>
-          <Secao titulo="Receita por cliente">
+          <Secao titulo={t.dashboard.receitaPorCliente}>
             <GraficoReceitaPorCliente dados={dados.clientes} />
           </Secao>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Secao titulo="Distribuído por sócio (acumulado)">
+          <Secao titulo={t.dashboard.distribuidoPorSocio}>
             <GraficoDistribuicaoSocios dados={dados.socios} />
             {dados.socios.length > 0 && (
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr>
-                      <th className="th">Sócio</th>
-                      <th className="th text-right">Lucros</th>
-                      <th className="th text-right">Pró-labore</th>
-                      <th className="th text-right">Total</th>
+                      <th className="th">{t.dashboard.thSocio}</th>
+                      <th className="th text-right">{t.dashboard.thLucros}</th>
+                      <th className="th text-right">{t.dashboard.thProLabore}</th>
+                      <th className="th text-right">{t.dashboard.thTotal}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -330,32 +332,29 @@ export default function Dashboard() {
           </Secao>
 
           <div className="grid gap-6">
-            <Secao titulo="Projeção de caixa — 6 meses">
+            <Secao titulo={t.dashboard.projecaoTitulo}>
               <GraficoProjecaoCaixa dados={dados.projecao} />
-              <p className="mt-3 text-xs text-slate-500">
-                Considera recorrentes ativos, compromissos já lançados e guias de
-                imposto com vencimento no período. Não grava nada no banco.
-              </p>
+              <p className="mt-3 text-xs text-slate-500">{t.dashboard.projecaoNota}</p>
             </Secao>
 
             <Secao
-              titulo="Caixinhas"
+              titulo={t.dashboard.caixinhasTitulo}
               acao={
                 <Link
-                  href="/caixinhas"
+                  href={rota("caixinhas")}
                   className="text-xs text-teal-700 underline"
                 >
-                  gerenciar
+                  {t.common.manage}
                 </Link>
               }
             >
               {caixinhas.length === 0 ? (
                 <p className="py-4 text-center text-sm text-slate-500">
-                  Nenhuma caixinha ainda.{" "}
-                  <Link href="/caixinhas" className="underline">
-                    Crie uma
+                  {t.dashboard.caixinhasVaziasPre}{" "}
+                  <Link href={rota("caixinhas")} className="underline">
+                    {t.dashboard.caixinhasVaziasLink}
                   </Link>{" "}
-                  para separar dinheiro por objetivo.
+                  {t.dashboard.caixinhasVaziasPos}
                 </p>
               ) : (
                 <ul className="space-y-3">
@@ -398,11 +397,7 @@ export default function Dashboard() {
                   })}
                 </ul>
               )}
-              <p className="mt-4 text-xs text-slate-500">
-                Guardar tira da conta e põe na caixinha — o patrimônio total não
-                muda, mas o caixa livre sim. Cada movimento aparece no extrato como
-                transferência.
-              </p>
+              <p className="mt-4 text-xs text-slate-500">{t.dashboard.caixinhasNota}</p>
             </Secao>
           </div>
         </div>
@@ -423,19 +418,17 @@ function CardFatorR({ fatorR }: { fatorR: Dados["fatorR"] }) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
-            Fator R
+            {t.dashboard.fatorRTitulo}
           </h2>
           <p className="mt-1 max-w-2xl text-xs text-slate-500">
-            Folha (pró-labore) dividida pela receita dos últimos 12 meses. Em 28% ou
-            mais, a empresa se enquadra no Anexo III, que começa em 6,00% — abaixo
-            disso, Anexo V, que começa em 15,50%.
+            {t.dashboard.fatorRExplica}
           </p>
         </div>
         <div className="text-right">
           <div className="num text-3xl font-semibold text-navy-900">
             {fatorR.fatorBps === null ? "—" : formatarBps(fatorR.fatorBps)}
           </div>
-          <div className="text-xs text-slate-500">Anexo {fatorR.anexo}</div>
+          <div className="text-xs text-slate-500">{t.dashboard.fatorRAnexo(fatorR.anexo)}</div>
         </div>
       </div>
 
@@ -449,22 +442,22 @@ function CardFatorR({ fatorR }: { fatorR: Dados["fatorR"] }) {
         <div
           className="absolute -top-1 w-0.5 bg-navy-900"
           style={{ left: `${marcador}%`, height: "1.1rem" }}
-          title="Limite de 28%"
+          title={t.dashboard.fatorRLimite28}
         />
       </div>
 
       <div className="mt-4 grid gap-4 text-sm sm:grid-cols-3">
         <div>
-          <div className="text-xs text-slate-500">RBT12</div>
+          <div className="text-xs text-slate-500">{t.dashboard.fatorRRbt12}</div>
           <div className="num font-medium">{formatarBRL(fatorR.rbt12Centavos)}</div>
         </div>
         <div>
-          <div className="text-xs text-slate-500">Folha 12 meses</div>
+          <div className="text-xs text-slate-500">{t.dashboard.fatorRFolha}</div>
           <div className="num font-medium">{formatarBRL(fatorR.folha12Centavos)}</div>
         </div>
         <div>
           <div className="text-xs text-slate-500">
-            {fatorR.anexo === "III" ? "Margem sobre o limite" : "Falta para o Anexo III"}
+            {fatorR.anexo === "III" ? t.dashboard.fatorRMargem : t.dashboard.fatorRFalta}
           </div>
           <div className="num font-medium">
             {fatorR.anexo === "III"
@@ -476,11 +469,7 @@ function CardFatorR({ fatorR }: { fatorR: Dados["fatorR"] }) {
 
       {fatorR.zonaDeAtencao && (
         <div className="mt-4">
-          <Aviso tom="alerta">
-            Vocês estão na zona de atenção (entre 26% e 30%). Uma variação pequena de
-            faturamento ou de pró-labore muda o anexo e a alíquota. Vale conversar com
-            o contador antes de fechar a próxima distribuição.
-          </Aviso>
+          <Aviso tom="alerta">{t.dashboard.fatorRZona}</Aviso>
         </div>
       )}
     </div>

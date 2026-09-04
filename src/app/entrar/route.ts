@@ -4,6 +4,7 @@ import { podeEntrar } from "@/lib/acesso";
 import { assinarSessao, NOME_COOKIE, opcoesCookie } from "@/lib/sessao-cookie";
 import { hashToken, estadoDoToken } from "@/lib/token-acesso";
 import { urlPublica } from "@/lib/url-publica";
+import { rota } from "@/lib/rotas";
 
 /** Roda em Node: usa `node:crypto` para o hash e o Prisma para o banco. */
 export const runtime = "nodejs";
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
   const base = urlPublica(req.headers);
 
   const recusar = (motivo: string) => {
-    const url = new URL("/login", base);
+    const url = new URL(rota("login"), base);
     url.searchParams.set("erro", motivo);
     return NextResponse.redirect(url);
   };

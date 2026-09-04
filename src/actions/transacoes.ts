@@ -7,6 +7,7 @@ import { deInputDate, competenciaDe, vencimentoDAS } from "@/lib/datas";
 import { calcularAliquota, diaVencimentoDAS } from "@/lib/simples";
 import { exigirAcesso } from "@/lib/sessao";
 import { registrar } from "@/lib/auditoria";
+import { t } from "@/lib/i18n";
 
 function revalidarTudo() {
   for (const p of ["/", "/transacoes", "/impostos", "/configuracoes"]) {
@@ -32,7 +33,7 @@ const opcional = (fd: FormData, k: string) => texto(fd, k) || null;
 export async function registrarReceita(fd: FormData) {
   const sessao = await exigirAcesso();
   const valorBruto = parseCentavos(texto(fd, "valor"));
-  if (valorBruto <= 0) throw new Error("Informe um valor maior que zero.");
+  if (valorBruto <= 0) throw new Error(t.errors.valorMaiorQueZero);
 
   const dataCompetencia = deInputDate(texto(fd, "dataCompetencia"));
   const dataCaixaRaw = opcional(fd, "dataCaixa");
@@ -59,9 +60,9 @@ export async function registrarReceita(fd: FormData) {
       ? parseCentavos(impostoManual)
       : aplicarBps(valorBruto, aliquotaBps);
 
-    if (impostoCentavos < 0) throw new Error("Imposto não pode ser negativo.");
+    if (impostoCentavos < 0) throw new Error(t.errors.impostoNegativo);
     if (impostoCentavos > valorBruto) {
-      throw new Error("O imposto não pode ser maior que o valor bruto da receita.");
+      throw new Error(t.errors.impostoMaiorQueBruto);
     }
   }
 
@@ -144,7 +145,7 @@ export async function previewImposto(valorTexto: string, dataTexto: string) {
 export async function registrarDespesa(fd: FormData) {
   const sessao = await exigirAcesso();
   const valor = parseCentavos(texto(fd, "valor"));
-  if (valor <= 0) throw new Error("Informe um valor maior que zero.");
+  if (valor <= 0) throw new Error(t.errors.valorMaiorQueZero);
 
   const dataCaixaRaw = opcional(fd, "dataCaixa");
 
@@ -190,10 +191,10 @@ export async function registrarDespesa(fd: FormData) {
 export async function registrarDistribuicao(fd: FormData) {
   const sessao = await exigirAcesso();
   const valor = parseCentavos(texto(fd, "valor"));
-  if (valor <= 0) throw new Error("Informe um valor maior que zero.");
+  if (valor <= 0) throw new Error(t.errors.valorMaiorQueZero);
 
   const socioId = texto(fd, "socioId");
-  if (!socioId) throw new Error("Selecione o sócio.");
+  if (!socioId) throw new Error(t.errors.selecioneSocio);
 
   const natureza = texto(fd, "natureza") || "LUCRO";
   const dataCompetencia = deInputDate(texto(fd, "dataCompetencia"));
@@ -203,13 +204,20 @@ export async function registrarDistribuicao(fd: FormData) {
   let idCriado = "";
 
   await prisma.$transaction(async (tx) => {
-    const t = await tx.transacao.create({
+    const lanc = await tx.transacao.create({
       data: {
         criadoPorId: sessao.socio?.id ?? null,
         tipo: "DISTRIBUICAO",
         descricao:
           texto(fd, "descricao") ||
-          `${natureza === "PRO_LABORE" ? "Pró-labore" : natureza === "REEMBOLSO" ? "Reembolso" : "Distribuição de lucros"} — ${socio?.nome ?? ""}`,
+          t.generated.comSocio(
+            natureza === "PRO_LABORE"
+              ? t.generated.proLabore
+              : natureza === "REEMBOLSO"
+                ? t.generated.reembolso
+                : t.generated.distribuicaoLucros,
+            socio?.nome ?? ""
+          ),
         valorCentavos: valor,
         dataCompetencia,
         dataCaixa: dataCaixaRaw ? deInputDate(dataCaixaRaw) : null,
@@ -220,7 +228,7 @@ export async function registrarDistribuicao(fd: FormData) {
 
     await tx.distribuicao.create({
       data: {
-        transacaoId: t.id,
+        transacaoId: lanc.id,
         socioId,
         natureza,
         valorCentavos: valor,
@@ -228,7 +236,7 @@ export async function registrarDistribuicao(fd: FormData) {
       },
     });
 
-    idCriado = t.id;
+    idCriado = lanc.id;
   });
 
   await registrar(sessao, {
@@ -252,13 +260,13 @@ export async function registrarDistribuicao(fd: FormData) {
 export async function registrarAporte(fd: FormData) {
   const sessao = await exigirAcesso();
   const valor = parseCentavos(texto(fd, "valor"));
-  if (valor <= 0) throw new Error("Informe um valor maior que zero.");
+  if (valor <= 0) throw new Error(t.errors.valorMaiorQueZero);
 
   const aporte = await prisma.transacao.create({
     data: {
       criadoPorId: sessao.socio?.id ?? null,
       tipo: "APORTE",
-      descricao: texto(fd, "descricao") || "Aporte de capital",
+      descricao: texto(fd, "descricao") || t.generated.aporteCapital,
       valorCentavos: valor,
       dataCompetencia: deInputDate(texto(fd, "dataCompetencia")),
       dataCaixa: deInputDate(texto(fd, "dataCaixa") || texto(fd, "dataCompetencia")),
@@ -284,7 +292,7 @@ export async function registrarAporte(fd: FormData) {
 /** Marca como pago/recebido hoje — o gesto mais frequente do dia a dia. */
 export async function confirmarCaixa(id: string, data?: string) {
   const sessao = await exigirAcesso();
-  const t = await prisma.transacao.update({
+  const lanc = await prisma.transacao.update({
     where: { id },
     data: { dataCaixa: data ? deInputDate(data) : new Date() },
   });
@@ -293,8 +301,8 @@ export async function confirmarCaixa(id: string, data?: string) {
     acao: "CONFIRMAR",
     entidade: "LANCAMENTO",
     entidadeId: id,
-    resumo: `Marcou "${t.descricao}" como liquidado`,
-    valorCentavos: t.valorCentavos,
+    resumo: `Marcou "${lanc.descricao}" como liquidado`,
+    valorCentavos: lanc.valorCentavos,
   });
 
   revalidarTudo();
@@ -302,7 +310,7 @@ export async function confirmarCaixa(id: string, data?: string) {
 
 export async function desfazerCaixa(id: string) {
   const sessao = await exigirAcesso();
-  const t = await prisma.transacao.update({
+  const lanc = await prisma.transacao.update({
     where: { id },
     data: { dataCaixa: null },
   });
@@ -311,8 +319,8 @@ export async function desfazerCaixa(id: string) {
     acao: "DESFAZER",
     entidade: "LANCAMENTO",
     entidadeId: id,
-    resumo: `Voltou "${t.descricao}" para pendente`,
-    valorCentavos: t.valorCentavos,
+    resumo: `Voltou "${lanc.descricao}" para pendente`,
+    valorCentavos: lanc.valorCentavos,
   });
 
   revalidarTudo();
@@ -326,14 +334,12 @@ export async function excluirTransacao(id: string) {
     where: { receitaId: id, status: "PAGO" },
   });
   if (paga) {
-    throw new Error(
-      "Esta receita tem imposto já pago. Estorne a guia em /impostos antes de excluir."
-    );
+    throw new Error(t.errors.receitaComImpostoPago);
   }
 
   // Lê ANTES de apagar: depois do delete não há mais o que descrever, e uma
   // exclusão sem registro é justamente o evento que mais precisa de trilha.
-  const t = await prisma.transacao.findUnique({ where: { id } });
+  const lanc = await prisma.transacao.findUnique({ where: { id } });
 
   await prisma.transacao.delete({ where: { id } });
 
@@ -341,8 +347,8 @@ export async function excluirTransacao(id: string) {
     acao: "EXCLUIR",
     entidade: "LANCAMENTO",
     entidadeId: id,
-    resumo: `Excluiu "${t?.descricao ?? id}"`,
-    valorCentavos: t?.valorCentavos ?? null,
+    resumo: `Excluiu "${lanc?.descricao ?? id}"`,
+    valorCentavos: lanc?.valorCentavos ?? null,
   });
 
   revalidarTudo();

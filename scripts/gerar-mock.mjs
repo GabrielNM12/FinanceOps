@@ -322,23 +322,26 @@ function faixaDe(anexo, rbt12) {
 // Precisa vir ANTES das provisões: é ele que define o Fator R, e o Fator R
 // define se o DAS sai pelo Anexo III (6%–13,5%) ou pelo V (15,5%+).
 // Com 6 sócios a R$ 2.900, a folha fica em ~30% da receita — acima dos 28%.
+//
+// Um lançamento DISTRIBUICAO por sócio: fin_distribuicao.transacaoId é @unique
+// (1:1 com o ledger), então não dá para pendurar N distribuições numa transação.
 for (const { ano, mes } of MESES) {
   const dataComp = diaSeguro(ano, mes, 5);
   const valorCada = R$(2_900);
-  const total = valorCada * SOCIOS.length;
-
-  const txId = lancar({
-    id: id("tx", competencia(ano, mes), "prolabore"),
-    tipo: "DISTRIBUICAO",
-    descricao: `Pró-labore ${competencia(ano, mes)}`,
-    valorCentavos: total,
-    dataCompetencia: carimbo(dataComp),
-    dataCaixa: carimbo(dataComp),
-    categoriaId: cat("Pró-labore"),
-    criadoPorId: SOCIOS[0].id,
-  });
 
   SOCIOS.forEach((s, i) => {
+    const txId = lancar({
+      id: id("tx", competencia(ano, mes), "prolabore", i + 1),
+      tipo: "DISTRIBUICAO",
+      descricao: `Pró-labore ${competencia(ano, mes)} — ${s.nome}`,
+      valorCentavos: valorCada,
+      dataCompetencia: carimbo(dataComp),
+      dataCaixa: carimbo(dataComp),
+      categoriaId: cat("Pró-labore"),
+      socioId: s.id,
+      criadoPorId: SOCIOS[0].id,
+    });
+
     distribuicoes.push({
       id: id("dist", competencia(ano, mes), "pl", i + 1),
       transacaoId: txId,
@@ -470,19 +473,20 @@ for (const { ano, mes } of MESES) {
 
   const dataComp = diaSeguro(ano, mes, 28);
   const valorCada = R$(entre(35, 65) * 100);
-  const total = valorCada * SOCIOS.length;
 
-  const txId = lancar({
-    id: id("tx", competencia(ano, mes), "lucro"),
-    tipo: "DISTRIBUICAO",
-    descricao: `Distribuição de lucro — ${competencia(ano, mes)}`,
-    valorCentavos: total,
-    dataCompetencia: carimbo(dataComp),
-    dataCaixa: carimbo(dataComp),
-    criadoPorId: SOCIOS[0].id,
-  });
-
+  // Um lançamento por sócio — ver a nota no bloco de pró-labore.
   SOCIOS.forEach((s, i) => {
+    const txId = lancar({
+      id: id("tx", competencia(ano, mes), "lucro", i + 1),
+      tipo: "DISTRIBUICAO",
+      descricao: `Distribuição de lucro — ${competencia(ano, mes)} — ${s.nome}`,
+      valorCentavos: valorCada,
+      dataCompetencia: carimbo(dataComp),
+      dataCaixa: carimbo(dataComp),
+      socioId: s.id,
+      criadoPorId: SOCIOS[0].id,
+    });
+
     distribuicoes.push({
       id: id("dist", competencia(ano, mes), "lucro", i + 1),
       transacaoId: txId,

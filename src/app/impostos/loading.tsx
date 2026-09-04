@@ -1,5 +1,6 @@
 import CarregandoTela from "@/components/CarregandoTela";
 import { EsqueletoImpostos } from "@/components/Esqueleto";
+import { t } from "@/lib/i18n";
 
 /**
  * Mostrado enquanto o JavaScript desta rota carrega.
@@ -14,7 +15,7 @@ import { EsqueletoImpostos } from "@/components/Esqueleto";
  */
 export default function Carregando() {
   return (
-    <CarregandoTela titulo="Impostos" descricao="Provisões geradas por receita e guias efetivamente pagas.">
+    <CarregandoTela titulo={t.taxes.title} descricao={t.taxes.subtitle}>
       <EsqueletoImpostos />
     </CarregandoTela>
   );

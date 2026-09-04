@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { formatarBRL, formatarBps } from "@/lib/money";
+import { formatarData } from "@/lib/datas";
+import { t } from "@/lib/i18n";
 import { pagarImpostos, estornarPagamento, recalcularProvisoes } from "@/actions/impostos";
 
 export type GuiaView = {
@@ -100,36 +102,33 @@ export default function PainelImpostos({
       <section className="card p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
-            Provisões em aberto ({abertas.length})
+            {t.taxPanel.provisoesAbertas(abertas.length)}
           </h2>
           <div className="flex flex-wrap gap-2">
             <button onClick={selecionarVencidas} className="btn-ghost text-xs">
-              Selecionar vencidas
+              {t.taxPanel.selecionarVencidas}
             </button>
             <button onClick={selecionarComLastro} className="btn-ghost text-xs">
-              Selecionar com lastro
+              {t.taxPanel.selecionarComLastro}
             </button>
             <button
               onClick={() =>
                 executar(async () => {
                   const r = await recalcularProvisoes();
-                  setMsg(
-                    `${r.alterados} de ${r.total} provisões atualizadas com a alíquota vigente.`
-                  );
+                  setMsg(t.taxPanel.recalcularResultado(r.alterados, r.total));
                 })
               }
               disabled={pendente}
               className="btn-ghost text-xs"
             >
-              Recalcular provisões
+              {t.taxPanel.recalcular}
             </button>
           </div>
         </div>
 
         {abertas.length === 0 ? (
           <p className="py-8 text-center text-sm text-slate-500">
-            Nenhuma guia em aberto. Toda receita lançada provisiona o DAS
-            automaticamente.
+            {t.taxPanel.vazioAbertas}
           </p>
         ) : (
           <>
@@ -146,12 +145,12 @@ export default function PainelImpostos({
                         onChange={todas}
                       />
                     </th>
-                    <th className="th">Receita</th>
-                    <th className="th">Lastro</th>
-                    <th className="th">Competência</th>
-                    <th className="th">Vencimento</th>
-                    <th className="th text-right">Alíquota</th>
-                    <th className="th text-right">Valor</th>
+                    <th className="th">{t.taxPanel.thReceita}</th>
+                    <th className="th">{t.taxPanel.thLastro}</th>
+                    <th className="th">{t.taxPanel.thCompetencia}</th>
+                    <th className="th">{t.taxPanel.thVencimento}</th>
+                    <th className="th text-right">{t.taxPanel.thAliquota}</th>
+                    <th className="th text-right">{t.taxPanel.thValor}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -182,14 +181,14 @@ export default function PainelImpostos({
                       <td className="td">
                         {g.receitaRecebida ? (
                           <span className="badge bg-emerald-100 text-emerald-700">
-                            recebida
+                            {t.taxPanel.badgeRecebida}
                           </span>
                         ) : (
                           <span
                             className="badge bg-amber-100 text-amber-800"
-                            title="A receita ainda não entrou na conta. Esta provisão não reduz o caixa livre — mas a guia vence do mesmo jeito."
+                            title={t.taxPanel.badgeAReceberTitle}
                           >
-                            a receber
+                            {t.taxPanel.badgeAReceber}
                           </span>
                         )}
                       </td>
@@ -204,10 +203,10 @@ export default function PainelImpostos({
                         </span>
                       </td>
                       <td className="td num text-right text-slate-600">
-                        {g.aliquotaBps !== null ? formatarBps(g.aliquotaBps) : "manual"}
+                        {g.aliquotaBps !== null ? formatarBps(g.aliquotaBps) : t.taxPanel.manual}
                         {g.anexo && (
                           <span className="ml-1 text-xs text-slate-400">
-                            (An. {g.anexo})
+                            {t.taxPanel.anexoAbrev(g.anexo)}
                           </span>
                         )}
                       </td>
@@ -242,16 +241,16 @@ export default function PainelImpostos({
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
                         {g.receitaRecebida ? (
                           <span className="badge bg-emerald-100 text-emerald-700">
-                            recebida
+                            {t.taxPanel.badgeRecebida}
                           </span>
                         ) : (
                           <span className="badge bg-amber-100 text-amber-800">
-                            a receber
+                            {t.taxPanel.badgeAReceber}
                           </span>
                         )}
                         <span>{g.competencia}</span>
                         <span className={g.vencida ? "font-medium text-red-600" : ""}>
-                          · vence {g.vencimento ?? "—"}
+                          {t.taxPanel.venceMobile(g.vencimento ?? "—")}
                         </span>
                       </div>
                       {g.cliente && (
@@ -263,7 +262,7 @@ export default function PainelImpostos({
                         {formatarBRL(g.valorCentavos)}
                       </div>
                       <div className="num text-xs text-slate-400">
-                        {g.aliquotaBps !== null ? formatarBps(g.aliquotaBps) : "manual"}
+                        {g.aliquotaBps !== null ? formatarBps(g.aliquotaBps) : t.taxPanel.manual}
                       </div>
                     </div>
                   </li>
@@ -273,17 +272,16 @@ export default function PainelImpostos({
 
             {semLastroSelecionadas.length > 0 && (
               <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                {semLastroSelecionadas.length} guia(s) selecionada(s) são de receita
-                que <strong>ainda não foi recebida</strong>. Pagá-las é legítimo — o
-                DAS vence pelo faturamento — mas o dinheiro sai de um caixa livre que
-                não contava com elas. Confira o saldo antes de confirmar.
+                {t.taxPanel.semLastroAviso(semLastroSelecionadas.length)}
+                <strong>{t.taxPanel.semLastroAvisoBold}</strong>
+                {t.taxPanel.semLastroAvisoFim}
               </p>
             )}
 
             <div className="mt-5 flex flex-wrap items-end justify-between gap-4 rounded-lg bg-slate-50 p-4">
               <div>
                 <div className="text-xs text-slate-500">
-                  {selecao.size} guia(s) selecionada(s)
+                  {t.taxPanel.selecionadas(selecao.size)}
                 </div>
                 <div className="num text-2xl font-semibold text-navy-900">
                   {formatarBRL(total)}
@@ -292,7 +290,7 @@ export default function PainelImpostos({
 
               <div className="flex items-end gap-3">
                 <div>
-                  <label className="label">Data do pagamento</label>
+                  <label className="label">{t.taxPanel.dataPagamento}</label>
                   <input
                     type="date"
                     value={data}
@@ -306,47 +304,44 @@ export default function PainelImpostos({
                     executar(async () => {
                       await pagarImpostos([...selecao], data);
                       setMsg(
-                        `Guia de ${formatarBRL(total)} registrada como paga em ${data
-                          .split("-")
-                          .reverse()
-                          .join("/")}.`
+                        t.taxPanel.pagamentoRegistrado(
+                          formatarBRL(total),
+                          formatarData(new Date(`${data}T00:00:00Z`))
+                        )
                       );
                       setSelecao(new Set());
                     })
                   }
                   className="btn-teal"
                 >
-                  {pendente ? "Registrando..." : "Registrar pagamento"}
+                  {pendente ? t.taxPanel.registrando : t.taxPanel.registrarPagamento}
                 </button>
               </div>
             </div>
 
-            <p className="mt-3 text-xs text-slate-500">
-              O pagamento gera uma única saída de caixa para o conjunto — é assim que
-              o DAS aparece no extrato bancário.
-            </p>
+            <p className="mt-3 text-xs text-slate-500">{t.taxPanel.pagamentoNota}</p>
           </>
         )}
       </section>
 
       <section className="card p-5">
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-600">
-          Guias pagas
+          {t.taxPanel.guiasPagas}
         </h2>
 
         {pagamentos.length === 0 ? (
           <p className="py-6 text-center text-sm text-slate-500">
-            Nenhuma guia paga ainda.
+            {t.taxPanel.vazioPagas}
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="th">Pagamento</th>
-                  <th className="th">Data</th>
-                  <th className="th text-right">Receitas</th>
-                  <th className="th text-right">Valor</th>
+                  <th className="th">{t.taxPanel.thPagamento}</th>
+                  <th className="th">{t.taxPanel.thData}</th>
+                  <th className="th text-right">{t.taxPanel.thReceitas}</th>
+                  <th className="th text-right">{t.taxPanel.thValor}</th>
                   <th className="th"></th>
                 </tr>
               </thead>
@@ -364,13 +359,13 @@ export default function PainelImpostos({
                         onClick={() =>
                           executar(async () => {
                             await estornarPagamento(p.id);
-                            setMsg("Pagamento estornado. As provisões voltaram a aberto.");
+                            setMsg(t.taxPanel.estornado);
                           })
                         }
                         disabled={pendente}
                         className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
                       >
-                        estornar
+                        {t.taxPanel.estornar}
                       </button>
                     </td>
                   </tr>

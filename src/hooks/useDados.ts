@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { irParaLogin } from "@/lib/rotas";
+import { t } from "@/lib/i18n";
 
 /**
  * Busca o JSON de uma tela.
@@ -55,7 +56,7 @@ export function useDados<T>(url: string) {
         const corpo = await r.json().catch(() => null);
 
         if (!r.ok) {
-          throw new Error(corpo?.erro ?? `Falha ao carregar (HTTP ${r.status})`);
+          throw new Error(corpo?.erro ?? t.common.httpFail(r.status));
         }
         if (meu !== seq.current || !vivo.current) return; // resposta obsoleta
 
@@ -64,9 +65,7 @@ export function useDados<T>(url: string) {
       } catch (e) {
         if (meu !== seq.current || !vivo.current) return;
         setErro(
-          e instanceof TypeError
-            ? "Sem resposta do servidor. Ele ainda está rodando?"
-            : (e as Error).message
+          e instanceof TypeError ? t.common.noResponse : (e as Error).message
         );
       } finally {
         if (meu === seq.current && vivo.current) {

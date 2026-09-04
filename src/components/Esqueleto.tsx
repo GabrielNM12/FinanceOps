@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { t } from "@/lib/i18n";
 
 /**
  * Esqueletos de carregamento.
@@ -27,7 +28,7 @@ export function Bloco({
 export function Carregando({ children }: { children: React.ReactNode }) {
   return (
     <div role="status" aria-busy="true" aria-live="polite">
-      <span className="sr-only">Carregando dados…</span>
+      <span className="sr-only">{t.common.loading}</span>
       {children}
     </div>
   );
@@ -50,11 +51,11 @@ export function ErroCarregamento({
     <div className="card flex flex-col items-center gap-3 px-6 py-12 text-center">
       <AlertTriangle className="text-amber-500" size={28} />
       <div>
-        <p className="font-medium text-navy-900">Não consegui carregar esta tela</p>
+        <p className="font-medium text-navy-900">{t.common.loadError}</p>
         <p className="mt-1 text-sm text-slate-500">{mensagem}</p>
       </div>
       <button onClick={onTentarNovamente} className="btn-ghost">
-        <RefreshCw size={15} /> Tentar novamente
+        <RefreshCw size={15} /> {t.common.retry}
       </button>
     </div>
   );

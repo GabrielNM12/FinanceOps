@@ -1,5 +1,6 @@
 import CarregandoTela from "@/components/CarregandoTela";
 import { EsqueletoDashboard } from "@/components/Esqueleto";
+import { t } from "@/lib/i18n";
 
 /**
  * Mostrado enquanto o JavaScript desta rota carrega.
@@ -14,7 +15,7 @@ import { EsqueletoDashboard } from "@/components/Esqueleto";
  */
 export default function Carregando() {
   return (
-    <CarregandoTela titulo="Dashboard" descricao="Posição consolidada">
+    <CarregandoTela titulo={t.dashboard.title} descricao={t.nav.dashboardHint}>
       <EsqueletoDashboard />
     </CarregandoTela>
   );

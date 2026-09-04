@@ -5,6 +5,8 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useTransition } from "react";
 import { sair } from "@/actions/acesso";
+import { rota } from "@/lib/rotas";
+import { t } from "@/lib/i18n";
 import { useDados } from "@/hooks/useDados";
 import {
   LayoutDashboard,
@@ -28,14 +30,14 @@ import {
  */
 
 const ITENS = [
-  { href: "/", label: "Dashboard", Icone: LayoutDashboard, dica: "Posição consolidada" },
-  { href: "/transacoes", label: "Lançamentos", Icone: ArrowLeftRight, dica: "Receitas, despesas e distribuições" },
-  { href: "/impostos", label: "Impostos", Icone: Receipt, dica: "Provisões e guias" },
-  { href: "/caixinhas", label: "Caixinhas", Icone: PiggyBank, dica: "Dinheiro separado por objetivo" },
-  { href: "/recorrentes", label: "Recorrentes", Icone: Repeat, dica: "Gastos fixos mensais" },
-  { href: "/importar", label: "Importar", Icone: FileUp, dica: "CSV de entrada e saída" },
-  { href: "/auditoria", label: "Auditoria", Icone: ScrollText, dica: "Quem fez o quê no sistema" },
-  { href: "/configuracoes", label: "Configurações", Icone: Settings, dica: "Sócios, clientes, categorias e fiscal" },
+  { href: rota("home"), label: t.nav.dashboard, Icone: LayoutDashboard, dica: t.nav.dashboardHint },
+  { href: rota("transacoes"), label: t.nav.transactions, Icone: ArrowLeftRight, dica: t.nav.transactionsHint },
+  { href: rota("impostos"), label: t.nav.taxes, Icone: Receipt, dica: t.nav.taxesHint },
+  { href: rota("caixinhas"), label: t.nav.reserves, Icone: PiggyBank, dica: t.nav.reservesHint },
+  { href: rota("recorrentes"), label: t.nav.recurring, Icone: Repeat, dica: t.nav.recurringHint },
+  { href: rota("importar"), label: t.nav.import, Icone: FileUp, dica: t.nav.importHint },
+  { href: rota("auditoria"), label: t.nav.audit, Icone: ScrollText, dica: t.nav.auditHint },
+  { href: rota("configuracoes"), label: t.nav.settings, Icone: Settings, dica: t.nav.settingsHint },
 ];
 
 type Sessao = {
@@ -53,7 +55,7 @@ export default function Sidebar() {
 
   // "/" só fica ativo em match exato, senão ele acende em todas as rotas.
   const ehAtivo = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+    href === rota("home") ? pathname === rota("home") : pathname.startsWith(href);
 
   return (
     <>
@@ -62,7 +64,7 @@ export default function Sidebar() {
         <button
           onClick={() => setAberto(true)}
           className="rounded-lg p-1.5 hover:bg-navy-700"
-          aria-label="Abrir menu"
+          aria-label={t.nav.openMenu}
         >
           <Menu size={20} />
         </button>
@@ -99,7 +101,7 @@ export default function Sidebar() {
           <button
             onClick={() => setAberto(false)}
             className="ml-auto rounded-lg p-1 hover:bg-navy-700 lg:hidden"
-            aria-label="Fechar menu"
+            aria-label={t.nav.closeMenu}
           >
             <X size={18} />
           </button>
@@ -138,7 +140,7 @@ export default function Sidebar() {
               </span>
               <div className="min-w-0 flex-1 leading-tight">
                 <div className="truncate text-xs font-medium text-white">
-                  {usuario.nome ?? "Acesso"}
+                  {usuario.nome ?? t.nav.account}
                 </div>
                 <div className="truncate text-[11px] text-slate-400">
                   {usuario.email}
@@ -147,7 +149,7 @@ export default function Sidebar() {
             </div>
             {usuario.demo ? (
               <div className="mt-1 px-3 py-2 text-[11px] leading-relaxed text-amber-300">
-                Sem login. Autoria dos lançamentos atribuída a este sócio.
+                {t.nav.demoNote}
               </div>
             ) : (
             <button
@@ -156,15 +158,14 @@ export default function Sidebar() {
               className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-navy-700 hover:text-white"
             >
               <LogOut size={16} className="shrink-0" />
-              {saindo ? "Saindo..." : "Sair"}
+              {saindo ? t.nav.signingOut : t.nav.signOut}
             </button>
             )}
           </div>
         )}
 
         <div className="px-5 pb-5 text-[11px] leading-relaxed text-slate-400">
-          Os cálculos de imposto são estimativas. Confirme com seu contador antes
-          de qualquer decisão.
+          {t.nav.disclaimer}
         </div>
       </aside>
     </>

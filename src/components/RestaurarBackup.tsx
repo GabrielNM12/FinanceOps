@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { Download, AlertTriangle, Check } from "lucide-react";
 import { analisarBackup, restaurarBackup, PreviewBackup } from "@/actions/backup";
 import { ROTULOS, ORDEM_INSERCAO, type DadosBackup } from "@/lib/backup";
+import { formatarData } from "@/lib/datas";
+import { t } from "@/lib/i18n";
 
 /**
  * Restauração em dois passos, como a importação de CSV — mas com o aviso mais
@@ -36,10 +38,10 @@ export default function RestaurarBackup({ aoRestaurar }: { aoRestaurar?: () => v
       <section className="card p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
-            1. Selecione o backup
+            {t.restore.passo1}
           </h2>
           <a href="/api/export/backup" className="btn-ghost text-xs">
-            <Download size={14} /> Baixar backup de agora
+            <Download size={14} /> {t.restore.baixarAgora}
           </a>
         </div>
 
@@ -62,7 +64,7 @@ export default function RestaurarBackup({ aoRestaurar }: { aoRestaurar?: () => v
           className="flex flex-wrap items-end gap-4"
         >
           <div className="min-w-[280px] flex-1">
-            <label className="label">Arquivo .json</label>
+            <label className="label">{t.restore.arquivoJson}</label>
             <input
               type="file"
               name="arquivo"
@@ -72,32 +74,31 @@ export default function RestaurarBackup({ aoRestaurar }: { aoRestaurar?: () => v
             />
           </div>
           <button disabled={pendente} className="btn-ghost">
-            {pendente ? "Lendo..." : "Analisar"}
+            {pendente ? t.restore.lendo : t.restore.analisar}
           </button>
         </form>
 
         <p className="mt-4 rounded-lg bg-slate-50 p-4 text-xs text-slate-600">
-          O backup completo carrega <strong>tudo</strong>: sócios, clientes,
-          categorias, caixinhas, recorrentes, lançamentos e as provisões de imposto
-          com a alíquota que valia na época. O CSV de lançamentos, ao lado, não faz
-          isso — ele recalcularia o DAS com as regras de hoje.
+          {t.restore.explica}
         </p>
       </section>
 
       {preview && (
         <section className="card p-5">
           <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-600">
-            2. Confira antes de gravar
+            {t.restore.passo2}
           </h2>
           <p className="mb-4 text-xs text-slate-500">
-            {preview.arquivo} · gerado em{" "}
-            {new Date(preview.geradoEm).toLocaleString("pt-BR")} · versão{" "}
-            {preview.versao}
+            {t.restore.meta(
+              preview.arquivo,
+              formatarData(new Date(preview.geradoEm)),
+              preview.versao
+            )}
           </p>
 
           {preview.problemas.length > 0 && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-              <strong>Backup inconsistente.</strong>
+              <strong>{t.restore.inconsistente}</strong>
               <ul className="mt-1 list-disc pl-4">
                 {preview.problemas.map((p, i) => (
                   <li key={i}>{p}</li>
@@ -118,9 +119,9 @@ export default function RestaurarBackup({ aoRestaurar }: { aoRestaurar?: () => v
             <table className="w-full">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="th">Tabela</th>
-                  <th className="th text-right">No banco hoje</th>
-                  <th className="th text-right">No backup</th>
+                  <th className="th">{t.restore.thTabela}</th>
+                  <th className="th text-right">{t.restore.thNoBanco}</th>
+                  <th className="th text-right">{t.restore.thNoBackup}</th>
                 </tr>
               </thead>
               <tbody>
@@ -158,11 +159,8 @@ export default function RestaurarBackup({ aoRestaurar }: { aoRestaurar?: () => v
                 className="mt-0.5"
               />
               <span className="text-sm">
-                <strong>Substituir tudo</strong> — restauração de verdade
-                <span className="block text-xs text-slate-500">
-                  Apaga o conteúdo atual e recria o banco a partir do arquivo. O
-                  resultado fica idêntico ao original, IDs inclusive.
-                </span>
+                <strong>{t.restore.modoSubstituirTitulo}</strong>{" "}
+                {t.restore.modoSubstituirDesc}
               </span>
             </label>
 
@@ -181,12 +179,8 @@ export default function RestaurarBackup({ aoRestaurar }: { aoRestaurar?: () => v
                 className="mt-0.5"
               />
               <span className="text-sm">
-                <strong>Mesclar</strong> — só o que falta
-                <span className="block text-xs text-slate-500">
-                  Insere apenas registros que ainda não existem. Nada é
-                  sobrescrito: um lançamento editado depois do backup fica como
-                  está.
-                </span>
+                <strong>{t.restore.modoMesclarTitulo}</strong>{" "}
+                {t.restore.modoMesclarDesc}
               </span>
             </label>
           </div>
@@ -201,12 +195,9 @@ export default function RestaurarBackup({ aoRestaurar }: { aoRestaurar?: () => v
               />
               <span>
                 <AlertTriangle size={13} className="mr-1 inline" />
-                Entendo que os{" "}
-                <strong>
-                  {Object.values(preview.atual).reduce((s, n) => s + n, 0)} registros
-                </strong>{" "}
-                que estão no banco agora serão apagados e substituídos pelo conteúdo
-                deste arquivo. Não há desfazer.
+                {t.restore.confirmacao(
+                  Object.values(preview.atual).reduce((s, n) => s + n, 0)
+                )}
               </span>
             </label>
           )}
@@ -225,8 +216,8 @@ export default function RestaurarBackup({ aoRestaurar }: { aoRestaurar?: () => v
                     const r = await restaurarBackup(preview.conteudo, modo);
                     setResultado(
                       r.modo === "SUBSTITUIR"
-                        ? `Banco restaurado: ${r.total} registros gravados.`
-                        : `${r.total} registro(s) inserido(s), ${r.totalPulado} já existiam e foram mantidos.`
+                        ? t.restore.resultadoSubstituir(r.total)
+                        : t.restore.resultadoMesclar(r.total, r.totalPulado)
                     );
                     setPreview(null);
                     setConfirmado(false);
@@ -239,11 +230,11 @@ export default function RestaurarBackup({ aoRestaurar }: { aoRestaurar?: () => v
               className="btn-teal"
             >
               {pendente ? (
-                "Restaurando..."
+                t.restore.restaurando
               ) : (
                 <>
                   <Check size={15} />{" "}
-                  {modo === "SUBSTITUIR" ? "Substituir tudo" : "Mesclar"}
+                  {modo === "SUBSTITUIR" ? t.restore.substituirTudo : t.restore.mesclar}
                 </>
               )}
             </button>

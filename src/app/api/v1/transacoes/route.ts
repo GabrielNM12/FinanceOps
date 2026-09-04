@@ -4,6 +4,7 @@ import { verificarToken, erro } from "@/lib/api-auth";
 import { vencimentoDAS, deInputDate } from "@/lib/datas";
 import { calcularAliquota, diaVencimentoDAS } from "@/lib/simples";
 import { aplicarBps } from "@/lib/money";
+import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return erro("Corpo inválido: esperado JSON.");
+    return erro(t.errors.corpoInvalidoJson);
   }
 
   const tipo = String(body.tipo ?? "");
@@ -89,23 +90,20 @@ export async function POST(req: NextRequest) {
     // TRANSFERENCIA fica de fora de propósito: ela só existe amarrada a um
     // movimento de caixinha, e criar uma solta por aqui deixaria o saldo em
     // conta divergente do total guardado.
-    return erro(
-      "Campo 'tipo' deve ser ENTRADA, SAIDA, DISTRIBUICAO ou APORTE. " +
-        "Transferências entre conta e caixinha não são criadas por esta rota."
-    );
+    return erro(t.errors.campoTipoInvalido);
   }
 
   const valorCentavos = Number(body.valorCentavos);
   if (!Number.isInteger(valorCentavos) || valorCentavos <= 0) {
-    return erro("Campo 'valorCentavos' deve ser inteiro positivo (em centavos).");
+    return erro(t.errors.campoValorCentavos);
   }
 
   const descricao = String(body.descricao ?? "").trim();
-  if (!descricao) return erro("Campo 'descricao' é obrigatório.");
+  if (!descricao) return erro(t.errors.campoDescricaoObrigatorio);
 
   const dataCompetenciaRaw = String(body.dataCompetencia ?? "");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dataCompetenciaRaw)) {
-    return erro("Campo 'dataCompetencia' deve estar no formato YYYY-MM-DD.");
+    return erro(t.errors.campoDataCompetencia);
   }
   const dataCompetencia = deInputDate(dataCompetenciaRaw);
 
@@ -117,7 +115,7 @@ export async function POST(req: NextRequest) {
     });
     if (jaExiste) {
       return Response.json(
-        { erro: "Já existe lançamento com esta referenciaExterna.", id: jaExiste.id },
+        { erro: t.errors.referenciaExternaExiste, id: jaExiste.id },
         { status: 409 }
       );
     }
@@ -169,6 +167,6 @@ export async function POST(req: NextRequest) {
 
     return Response.json(criada, { status: 201 });
   } catch (e) {
-    return erro(`Falha ao gravar: ${(e as Error).message}`, 500);
+    return erro(t.errors.falhaGravar((e as Error).message), 500);
   }
 }

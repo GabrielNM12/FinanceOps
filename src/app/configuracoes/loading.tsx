@@ -1,5 +1,6 @@
 import CarregandoTela from "@/components/CarregandoTela";
 import { EsqueletoConfiguracoes } from "@/components/Esqueleto";
+import { t } from "@/lib/i18n";
 
 /**
  * Mostrado enquanto o JavaScript desta rota carrega.
@@ -14,7 +15,7 @@ import { EsqueletoConfiguracoes } from "@/components/Esqueleto";
  */
 export default function Carregando() {
   return (
-    <CarregandoTela titulo="Configurações" descricao="Sócios, clientes, categorias e parâmetros fiscais.">
+    <CarregandoTela titulo={t.settings.title} descricao={t.settings.subtitle}>
       <EsqueletoConfiguracoes />
     </CarregandoTela>
   );

@@ -18,9 +18,10 @@ import {
   movimentarCaixinha,
   excluirMovimento,
 } from "@/actions/caixinhas";
-import { ICONES, CHAVES_ICONE, CORES, iconeDe } from "@/lib/caixinha-icones";
+import { ICONES, CHAVES_ICONE, CORES, iconeDe, rotuloIcone } from "@/lib/caixinha-icones";
 import { formatarBRL, formatarBps } from "@/lib/money";
 import { formatarData } from "@/lib/datas";
+import { t } from "@/lib/i18n";
 
 type Caixinha = {
   id: string;
@@ -70,8 +71,8 @@ export default function CaixinhasPage() {
 
   const cabecalho = (
     <PageTitle
-      titulo="Caixinhas"
-      descricao="Separe dinheiro por objetivo. Guardar tira da conta e põe na caixinha."
+      titulo={t.reserves.title}
+      descricao={t.reserves.subtitle}
       acao={
         <button
           onClick={() => {
@@ -81,7 +82,7 @@ export default function CaixinhasPage() {
           className="btn-teal"
           disabled={carregando}
         >
-          <Plus size={15} /> Nova caixinha
+          <Plus size={15} /> {t.reserves.nova}
         </button>
       }
     />
@@ -116,25 +117,25 @@ export default function CaixinhasPage() {
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Kpi
-          titulo="Em conta"
+          titulo={t.reserves.kpiEmConta}
           valorCentavos={dados.totais.saldoContaCentavos}
-          detalhe="Disponível para movimentar"
+          detalhe={t.reserves.kpiEmContaDetalhe}
         />
         <Kpi
-          titulo="Guardado"
+          titulo={t.reserves.kpiGuardado}
           valorCentavos={dados.totais.guardadoCentavos}
-          detalhe={`${ativas.length} caixinha(s) ativa(s)`}
+          detalhe={t.reserves.kpiGuardadoDetalhe(ativas.length)}
           destaque
         />
         <Kpi
-          titulo="Patrimônio"
+          titulo={t.reserves.kpiPatrimonio}
           valorCentavos={dados.totais.patrimonioCentavos}
-          detalhe="Conta + caixinhas"
+          detalhe={t.reserves.kpiPatrimonioDetalhe}
         />
         <Kpi
-          titulo="Caixa livre"
+          titulo={t.reserves.kpiCaixaLivre}
           valorCentavos={dados.totais.caixaLivreCentavos}
-          detalhe="Conta menos imposto sobre recebido"
+          detalhe={t.reserves.kpiCaixaLivreDetalhe}
           tom={dados.totais.caixaLivreCentavos >= 0 ? "positivo" : "negativo"}
         />
       </div>
@@ -156,17 +157,14 @@ export default function CaixinhasPage() {
               }
               setCriando(false);
               setEditando(null);
-              return editando ? "Caixinha atualizada." : "Caixinha criada.";
+              return editando ? t.reserves.atualizada : t.reserves.criada;
             })
           }
         />
       )}
 
       {ativas.length === 0 && !criando ? (
-        <Vazio>
-          Nenhuma caixinha ainda. Crie uma para separar dinheiro por objetivo —
-          reserva de emergência, 13º, equipamento, provisão de imposto.
-        </Vazio>
+        <Vazio>{t.reserves.vazio}</Vazio>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {ativas.map((c) => (
@@ -191,7 +189,7 @@ export default function CaixinhasPage() {
       {arquivadas.length > 0 && (
         <div className="mt-8">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Arquivadas
+            {t.reserves.arquivadas}
           </h2>
           <div className="card divide-y divide-slate-100">
             {arquivadas.map((c) => (
@@ -203,14 +201,14 @@ export default function CaixinhasPage() {
                     onClick={() => acao.executar(() => arquivarCaixinha(c.id, true))}
                     className="rounded px-2 py-1 text-xs text-teal-700 hover:bg-teal-50"
                   >
-                    reativar
+                    {t.reserves.reativar}
                   </button>
                   <button
                     disabled={acao.pendente}
                     onClick={() => acao.executar(() => excluirCaixinha(c.id))}
                     className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
                   >
-                    excluir
+                    {t.common.delete}
                   </button>
                 </div>
               </div>
@@ -219,13 +217,7 @@ export default function CaixinhasPage() {
         </div>
       )}
 
-      <p className="mt-6 text-xs text-slate-500">
-        Guardar é uma transferência entre bolsos seus: o dinheiro sai da conta e
-        entra na caixinha, e cada movimento aparece no extrato como{" "}
-        <strong>Transferência</strong>. Não é receita nem despesa — o lucro do mês
-        não muda quando você guarda. O que muda é o caixa livre, porque o dinheiro
-        deixou de estar disponível.
-      </p>
+      <p className="mt-6 text-xs text-slate-500">{t.reserves.notaRodape}</p>
     </>
   );
 }
@@ -276,7 +268,7 @@ function CardCaixinha({
           <button
             onClick={onEditar}
             className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-            title="Editar"
+            title={t.common.edit}
           >
             <Pencil size={14} />
           </button>
@@ -286,8 +278,8 @@ function CardCaixinha({
           <div className="mt-4">
             <div className="mb-1 flex items-center justify-between text-xs">
               <span className="text-slate-500">
-                Meta {formatarBRL(c.metaCentavos!)}
-                {c.metaData && ` até ${formatarData(new Date(c.metaData))}`}
+                {t.reserves.metaLabel(formatarBRL(c.metaCentavos!))}
+                {c.metaData && t.reserves.metaAte(formatarData(new Date(c.metaData)))}
               </span>
               <span
                 className={
@@ -310,8 +302,8 @@ function CardCaixinha({
             </div>
             <div className="mt-1 text-xs text-slate-400">
               {c.progresso.atingida
-                ? "Meta atingida"
-                : `Faltam ${formatarBRL(c.progresso.faltaCentavos)}`}
+                ? t.reserves.metaAtingida
+                : t.reserves.metaFaltam(formatarBRL(c.progresso.faltaCentavos))}
             </div>
           </div>
         )}
@@ -325,20 +317,20 @@ function CardCaixinha({
             onClick={() => setMovimento(movimento === "DEPOSITO" ? null : "DEPOSITO")}
             className="btn-teal px-3 py-1.5 text-xs"
           >
-            <ArrowDownToLine size={13} /> Guardar
+            <ArrowDownToLine size={13} /> {t.reserves.guardar}
           </button>
           <button
             onClick={() => setMovimento(movimento === "RESGATE" ? null : "RESGATE")}
             disabled={c.saldoCentavos === 0}
             className="btn-ghost px-3 py-1.5 text-xs"
           >
-            <ArrowUpFromLine size={13} /> Resgatar
+            <ArrowUpFromLine size={13} /> {t.reserves.resgatar}
           </button>
           <button
             onClick={onAbrir}
             className="ml-auto rounded px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
           >
-            {aberta ? "fechar" : `histórico (${c.qtdMovimentos})`}
+            {aberta ? t.common.close : t.reserves.historico(c.qtdMovimentos)}
           </button>
         </div>
 
@@ -352,7 +344,7 @@ function CardCaixinha({
                 const r = await movimentarCaixinha(fd);
                 form.current?.reset();
                 setMovimento(null);
-                return `${c.nome} agora tem ${formatarBRL(r.saldoCentavos)}.`;
+                return t.reserves.novoSaldo(c.nome, formatarBRL(r.saldoCentavos));
               });
             }}
             className="mt-4 rounded-lg bg-slate-50 p-3"
@@ -363,18 +355,18 @@ function CardCaixinha({
             <div className="flex items-end gap-2">
               <div className="flex-1">
                 <label className="label">
-                  {movimento === "DEPOSITO" ? "Guardar" : "Resgatar"}
+                  {movimento === "DEPOSITO" ? t.reserves.guardar : t.reserves.resgatar}
                 </label>
                 <input
                   name="valor"
                   required
                   autoFocus
                   className="input"
-                  placeholder="1.000,00"
+                  placeholder={t.reserves.phValorMov}
                 />
               </div>
               <div>
-                <label className="label">Data</label>
+                <label className="label">{t.common.date}</label>
                 <input
                   type="date"
                   name="data"
@@ -386,14 +378,14 @@ function CardCaixinha({
             <input
               name="descricao"
               className="input mt-2"
-              placeholder="Descrição (opcional)"
+              placeholder={t.reserves.phDescMov}
             />
 
             <div className="mt-2 flex items-center justify-between">
               <span className="text-xs text-slate-500">
                 {movimento === "DEPOSITO"
-                  ? `Disponível em conta: ${formatarBRL(saldoContaCentavos)}`
-                  : `Nesta caixinha: ${formatarBRL(c.saldoCentavos)}`}
+                  ? t.reserves.dispEmConta(formatarBRL(saldoContaCentavos))
+                  : t.reserves.nestaCaixinha(formatarBRL(c.saldoCentavos))}
               </span>
               <div className="flex gap-2">
                 <button
@@ -401,10 +393,10 @@ function CardCaixinha({
                   onClick={() => setMovimento(null)}
                   className="rounded px-2 py-1 text-xs text-slate-500 hover:bg-slate-200"
                 >
-                  cancelar
+                  {t.common.cancelLower}
                 </button>
                 <button disabled={pendente} className="btn-teal px-3 py-1.5 text-xs">
-                  {pendente ? "..." : "Confirmar"}
+                  {pendente ? t.reserves.confirmarCurto : t.common.confirm}
                 </button>
               </div>
             </div>
@@ -416,7 +408,7 @@ function CardCaixinha({
         <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-3">
           {!detalhe || detalhe.movimentos.length === 0 ? (
             <p className="py-3 text-center text-xs text-slate-500">
-              Nenhum movimento ainda.
+              {t.reserves.nenhumMovimento}
             </p>
           ) : (
             <ul className="divide-y divide-slate-200">
@@ -438,7 +430,7 @@ function CardCaixinha({
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-xs text-slate-700">
                       {m.descricao ??
-                        (m.tipo === "DEPOSITO" ? "Depósito" : "Resgate")}
+                        (m.tipo === "DEPOSITO" ? t.reserves.movDeposito : t.reserves.movResgate)}
                     </div>
                     <div className="text-[11px] text-slate-400">
                       {formatarData(new Date(m.data))}
@@ -455,7 +447,7 @@ function CardCaixinha({
                     disabled={pendente}
                     onClick={() => acao.executar(() => excluirMovimento(m.id))}
                     className="rounded p-1 text-slate-300 hover:bg-red-50 hover:text-red-600"
-                    title="Excluir movimento e a transferência do extrato"
+                    title={t.reserves.excluirMovTitle}
                   >
                     <Trash2 size={12} />
                   </button>
@@ -470,7 +462,7 @@ function CardCaixinha({
               onClick={() => acao.executar(() => arquivarCaixinha(c.id, false))}
               className="mt-2 flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700"
             >
-              <Archive size={12} /> arquivar caixinha
+              <Archive size={12} /> {t.reserves.arquivarCaixinha}
             </button>
           )}
         </div>
@@ -505,7 +497,7 @@ function FormCaixinha({
     >
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
-          {caixinha ? `Editar ${caixinha.nome}` : "Nova caixinha"}
+          {caixinha ? t.reserves.formEditar(caixinha.nome) : t.reserves.formNova}
         </h2>
         <button
           type="button"
@@ -521,17 +513,17 @@ function FormCaixinha({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="lg:col-span-2">
-          <label className="label">Nome</label>
+          <label className="label">{t.reserves.fNome}</label>
           <input
             name="nome"
             required
             defaultValue={caixinha?.nome}
             className="input"
-            placeholder="Reserva de emergência"
+            placeholder={t.reserves.phNome}
           />
         </div>
         <div>
-          <label className="label">Meta (opcional)</label>
+          <label className="label">{t.reserves.fMeta}</label>
           <input
             name="meta"
             defaultValue={
@@ -540,11 +532,11 @@ function FormCaixinha({
                 : ""
             }
             className="input"
-            placeholder="30.000,00"
+            placeholder={t.reserves.phMeta}
           />
         </div>
         <div>
-          <label className="label">Até quando (opcional)</label>
+          <label className="label">{t.reserves.fMetaData}</label>
           <input
             type="date"
             name="metaData"
@@ -553,7 +545,7 @@ function FormCaixinha({
           />
         </div>
         <div className="lg:col-span-4">
-          <label className="label">Observações</label>
+          <label className="label">{t.reserves.fObservacoes}</label>
           <input
             name="observacoes"
             defaultValue={caixinha?.observacoes ?? ""}
@@ -564,7 +556,7 @@ function FormCaixinha({
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="label">Cor</label>
+          <label className="label">{t.reserves.fCor}</label>
           <div className="flex flex-wrap gap-2">
             {CORES.map((c) => (
               <button
@@ -575,22 +567,22 @@ function FormCaixinha({
                 className={`h-7 w-7 rounded-full transition-transform ${
                   cor === c ? "scale-110 ring-2 ring-navy-900 ring-offset-2" : ""
                 }`}
-                aria-label={`Cor ${c}`}
+                aria-label={t.reserves.corAria(c)}
               />
             ))}
           </div>
         </div>
         <div>
-          <label className="label">Ícone</label>
+          <label className="label">{t.reserves.fIcone}</label>
           <div className="flex flex-wrap gap-2">
             {CHAVES_ICONE.map((k) => {
-              const { Icone, rotulo } = ICONES[k];
+              const { Icone } = ICONES[k];
               return (
                 <button
                   key={k}
                   type="button"
                   onClick={() => setIcone(k)}
-                  title={rotulo}
+                  title={rotuloIcone(k)}
                   className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${
                     icone === k
                       ? "border-navy-900 bg-navy-900 text-white"
@@ -607,10 +599,10 @@ function FormCaixinha({
 
       <div className="mt-5 flex justify-end gap-2">
         <button type="button" onClick={onFechar} className="btn-ghost">
-          Cancelar
+          {t.common.cancel}
         </button>
         <button disabled={pendente} className="btn-teal">
-          {pendente ? "Salvando..." : caixinha ? "Salvar" : "Criar caixinha"}
+          {pendente ? t.common.saving : caixinha ? t.common.save : t.reserves.criarCaixinha}
         </button>
       </div>
     </form>

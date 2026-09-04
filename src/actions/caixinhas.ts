@@ -8,6 +8,7 @@ import { saldoCaixinha, validarMovimento } from "@/lib/caixa";
 import { posicaoCaixa } from "@/lib/queries";
 import { exigirAcesso } from "@/lib/sessao";
 import { registrar } from "@/lib/auditoria";
+import { t } from "@/lib/i18n";
 
 const texto = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const opcional = (fd: FormData, k: string) => texto(fd, k) || null;
@@ -23,10 +24,10 @@ function revalidar() {
 export async function criarCaixinha(fd: FormData) {
   const sessao = await exigirAcesso();
   const nome = texto(fd, "nome");
-  if (!nome) throw new Error("Dê um nome à caixinha.");
+  if (!nome) throw new Error(t.errors.deNomeCaixinha);
 
   const jaExiste = await prisma.caixinha.findFirst({ where: { nome } });
-  if (jaExiste) throw new Error(`Já existe uma caixinha chamada "${nome}".`);
+  if (jaExiste) throw new Error(t.errors.caixinhaJaExiste(nome));
 
   const metaTexto = texto(fd, "meta");
   const metaData = texto(fd, "metaData");
@@ -48,7 +49,7 @@ export async function criarCaixinha(fd: FormData) {
 export async function atualizarCaixinha(id: string, fd: FormData) {
   const sessao = await exigirAcesso();
   const nome = texto(fd, "nome");
-  if (!nome) throw new Error("Dê um nome à caixinha.");
+  if (!nome) throw new Error(t.errors.deNomeCaixinha);
 
   const conflito = await prisma.caixinha.findFirst({
     where: { nome, NOT: { id } },
@@ -79,9 +80,7 @@ export async function arquivarCaixinha(id: string, ativa: boolean) {
   if (!ativa) {
     const saldo = await saldoDe(id);
     if (saldo !== 0) {
-      throw new Error(
-        "Resgate todo o dinheiro antes de arquivar — caixinha arquivada com saldo some do painel e o dinheiro fica invisível."
-      );
+      throw new Error(t.errors.resgateAntesDeArquivar);
     }
   }
   await prisma.caixinha.update({ where: { id }, data: { ativa } });
@@ -101,11 +100,9 @@ export async function excluirCaixinha(id: string) {
     prisma.movimentoCaixinha.count({ where: { caixinhaId: id } }),
   ]);
 
-  if (saldo !== 0) throw new Error("Resgate todo o dinheiro antes de excluir.");
+  if (saldo !== 0) throw new Error(t.errors.resgateAntesDeExcluir);
   if (movimentos > 0) {
-    throw new Error(
-      "Esta caixinha tem histórico. Arquive em vez de excluir — apagar removeria as transferências do extrato e mudaria o saldo em conta retroativamente."
-    );
+    throw new Error(t.errors.caixinhaComHistorico);
   }
 
   await prisma.caixinha.delete({ where: { id } });
@@ -140,7 +137,7 @@ export async function movimentarCaixinha(fd: FormData) {
   const data = texto(fd, "data") ? deInputDate(texto(fd, "data")) : new Date();
 
   const caixinha = await prisma.caixinha.findUnique({ where: { id: caixinhaId } });
-  if (!caixinha) throw new Error("Caixinha não encontrada.");
+  if (!caixinha) throw new Error(t.errors.caixinhaNaoEncontrada);
 
   const [posicao, saldoAtual] = await Promise.all([
     posicaoCaixa(),
@@ -157,20 +154,24 @@ export async function movimentarCaixinha(fd: FormData) {
 
   const descricao =
     opcional(fd, "descricao") ??
-    `${tipo === "DEPOSITO" ? "Guardado em" : "Resgatado de"} ${caixinha.nome}`;
+    (tipo === "DEPOSITO"
+      ? t.generated.guardadoEm(caixinha.nome)
+      : t.generated.resgatadoDe(caixinha.nome));
+
+  const obs =
+    tipo === "DEPOSITO"
+      ? t.generated.transfContaParaCaixinha
+      : t.generated.transfCaixinhaParaConta;
 
   await prisma.$transaction(async (tx) => {
-    const t = await tx.transacao.create({
+    const lanc = await tx.transacao.create({
       data: {
         tipo: "TRANSFERENCIA",
         descricao,
         valorCentavos: valor,
         dataCompetencia: data,
         dataCaixa: data,
-        observacoes:
-          tipo === "DEPOSITO"
-            ? "Transferência da conta para a caixinha"
-            : "Transferência da caixinha para a conta",
+        observacoes: obs,
       },
     });
 
@@ -181,7 +182,7 @@ export async function movimentarCaixinha(fd: FormData) {
         valorCentavos: valor,
         data,
         descricao: opcional(fd, "descricao"),
-        transacaoId: t.id,
+        transacaoId: lanc.id,
       },
     });
   });
@@ -204,7 +205,7 @@ export async function movimentarCaixinha(fd: FormData) {
 export async function excluirMovimento(id: string) {
   const sessao = await exigirAcesso();
   const mov = await prisma.movimentoCaixinha.findUnique({ where: { id } });
-  if (!mov) throw new Error("Movimento não encontrado.");
+  if (!mov) throw new Error(t.errors.movimentoNaoEncontrado);
 
   // Desfazer um resgate devolve dinheiro para a caixinha, então nunca deixa
   // saldo negativo. Desfazer um depósito, sim: se o dinheiro já foi resgatado,
@@ -212,9 +213,7 @@ export async function excluirMovimento(id: string) {
   if (mov.tipo === "DEPOSITO") {
     const saldo = await saldoDe(mov.caixinhaId);
     if (saldo - mov.valorCentavos < 0) {
-      throw new Error(
-        "Excluir este depósito deixaria a caixinha com saldo negativo. Desfaça os resgates posteriores primeiro."
-      );
+      throw new Error(t.errors.depositoSaldoNegativo);
     }
   }
 

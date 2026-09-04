@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { t } from "@/lib/i18n";
 
 /**
  * Autenticação da API de integração.
@@ -19,10 +20,7 @@ export function verificarToken(req: NextRequest): Response | null {
   const enviado = header.replace(/^Bearer\s+/i, "");
 
   if (enviado !== esperado) {
-    return Response.json(
-      { erro: "Não autorizado. Envie o header Authorization: Bearer <API_TOKEN>." },
-      { status: 401 }
-    );
+    return Response.json({ erro: t.errors.naoAutorizadoBearer }, { status: 401 });
   }
   return null;
 }

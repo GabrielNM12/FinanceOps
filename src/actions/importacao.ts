@@ -9,6 +9,7 @@ import { aplicarBps } from "@/lib/money";
 import { competenciaDe } from "@/lib/datas";
 import { exigirAcesso } from "@/lib/sessao";
 import { registrar } from "@/lib/auditoria";
+import { t } from "@/lib/i18n";
 
 /** Normaliza nome para casar sócio sem tropeçar em acento ou caixa. */
 function chaveNome(s: string) {
@@ -42,15 +43,14 @@ export type PreviewImportacao = {
 export async function analisarCSV(fd: FormData): Promise<PreviewImportacao> {
   const sessao = await exigirAcesso();
   const arquivo = fd.get("arquivo") as File | null;
-  if (!arquivo || arquivo.size === 0) throw new Error("Selecione um arquivo CSV.");
+  if (!arquivo || arquivo.size === 0) throw new Error(t.errors.selecioneArquivoCsv);
 
   const texto = await arquivo.text();
   const { cabecalho, mapa, linhas } = prepararImportacao(texto);
 
   if (mapa.data === undefined || mapa.valor === undefined) {
     throw new Error(
-      `O arquivo precisa ter ao menos as colunas "data" e "valor". ` +
-        `Colunas encontradas: ${cabecalho.join(", ") || "(nenhuma)"}.`
+      t.errors.arquivoPrecisaColunas(cabecalho.join(", ") || "(nenhuma)")
     );
   }
 
@@ -70,7 +70,7 @@ export async function analisarCSV(fd: FormData): Promise<PreviewImportacao> {
   const saida = linhas.map((l) => {
     let erro = l.erro;
     if (!erro && l.socio && !conhecidos.has(chaveNome(l.socio))) {
-      erro = `Sócio "${l.socio}" não cadastrado. Adicione em Configurações → Sócios.`;
+      erro = t.errors.socioNaoCadastrado(l.socio);
     }
     return {
       ...l,
@@ -115,7 +115,7 @@ export async function confirmarImportacao(
 ) {
   const sessao = await exigirAcesso();
   const aprovadas = linhas.filter((l) => !l.erro && !l.duplicada && l.data);
-  if (aprovadas.length === 0) throw new Error("Nenhuma linha válida para importar.");
+  if (aprovadas.length === 0) throw new Error(t.errors.nenhumaLinhaValida);
 
   const dia = await diaVencimentoDAS();
 

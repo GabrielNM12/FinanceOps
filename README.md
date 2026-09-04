@@ -56,6 +56,17 @@ error: Environment variable not found: DATABASE_URL.
 **Um clone limpo não tem seus dados.** Depois de subir, o banco está vazio — vá
 em Importar → Backup completo e carregue o `.json` mais recente.
 
+### Idioma
+
+O app é uma língua por deploy, escolhida no **build** por
+`NEXT_PUBLIC_APP_LOCALE` no `.env`. Ausente ou qualquer valor ≠ `en` mantém o
+português (padrão). `NEXT_PUBLIC_APP_LOCALE="en"` liga o inglês — interface,
+caminhos das URLs (`/impostos` → `/taxes`, …), e-mails de acesso e formato de
+número (`R$ 1,234.56`; a moeda continua BRL). Os termos do Simples Nacional
+(DAS, Fator R, RBT12, pró-labore, Anexo III/V) ficam como estão nas duas
+línguas. A trilha de auditoria não é traduzida: cada evento fica no idioma em
+que foi gravado.
+
 ### Comandos
 
 | Comando | O que faz |

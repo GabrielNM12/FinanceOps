@@ -22,6 +22,7 @@ import {
   alterarEmailSocio,
 } from "@/actions/cadastros";
 import { formatarBRL, formatarBps, parseBps, parseCentavos } from "@/lib/money";
+import { t } from "@/lib/i18n";
 
 type Dados = {
   config: Record<string, string>;
@@ -72,10 +73,7 @@ export default function ConfiguracoesPage() {
   const formCategoria = useRef<HTMLFormElement>(null);
 
   const cabecalho = (
-    <PageTitle
-      titulo="Configurações"
-      descricao="Sócios, clientes, categorias e parâmetros fiscais."
-    />
+    <PageTitle titulo={t.settings.title} descricao={t.settings.subtitle} />
   );
 
   if (erro) {
@@ -104,13 +102,11 @@ export default function ConfiguracoesPage() {
 
       <div className="grid gap-6">
         {/* ---- Sócios ---- */}
-        <Secao titulo="Sócios">
+        <Secao titulo={t.settings.secSocios}>
           {dados.socios.length > 0 && dados.somaParticipacaoBps !== 10000 && (
             <div className="mb-4">
               <Aviso tom="alerta">
-                As participações somam {formatarBps(dados.somaParticipacaoBps)} em vez
-                de 100%. Com 6 sócios em partes iguais o certo é 16,67% para quatro
-                deles e 16,66% para dois — 16,67% em todos daria 100,02%.
+                {t.settings.participacaoAviso(formatarBps(dados.somaParticipacaoBps))}
               </Aviso>
             </div>
           )}
@@ -128,19 +124,19 @@ export default function ConfiguracoesPage() {
             className="mb-5 flex flex-wrap items-end gap-3 rounded-lg bg-slate-50 p-4"
           >
             <div className="min-w-[200px] flex-1">
-              <label className="label">Nome</label>
+              <label className="label">{t.settings.fNome}</label>
               <input name="nome" required className="input" />
             </div>
             <div className="min-w-[180px]">
-              <label className="label">E-mail</label>
+              <label className="label">{t.settings.fEmail}</label>
               <input name="email" type="email" className="input" />
             </div>
             <div>
-              <label className="label">Participação (%)</label>
-              <input name="participacao" className="input w-32" placeholder="16,67" />
+              <label className="label">{t.settings.fParticipacao}</label>
+              <input name="participacao" className="input w-32" placeholder={t.settings.phParticipacao} />
             </div>
             <button disabled={acao.pendente} className="btn-teal">
-              <Users size={15} /> Adicionar
+              <Users size={15} /> {t.common.add}
             </button>
           </form>
 
@@ -148,10 +144,10 @@ export default function ConfiguracoesPage() {
             <table className="w-full min-w-[560px]">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="th">Sócio</th>
-                  <th className="th">E-mail</th>
-                  <th className="th text-right">Participação</th>
-                  <th className="th text-right">Já recebeu</th>
+                  <th className="th">{t.settings.thSocio}</th>
+                  <th className="th">{t.settings.thEmail}</th>
+                  <th className="th text-right">{t.settings.thParticipacao}</th>
+                  <th className="th text-right">{t.settings.thJaRecebeu}</th>
                   <th className="th"></th>
                 </tr>
               </thead>
@@ -167,8 +163,8 @@ export default function ConfiguracoesPage() {
                           acao.executar(async () => {
                             await alterarEmailSocio(s.id, email);
                             return email
-                              ? `Acesso de ${s.nome} agora é ${email}. O endereço anterior perdeu o acesso na hora.`
-                              : `${s.nome} ficou sem e-mail e não consegue mais entrar.`;
+                              ? t.settings.emailAlterado(s.nome, email)
+                              : t.settings.emailRemovido(s.nome);
                           })
                         }
                       />
@@ -185,7 +181,7 @@ export default function ConfiguracoesPage() {
                         onClick={() => acao.executar(() => excluirSocio(s.id))}
                         className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
                       >
-                        remover
+                        {t.common.remove}
                       </button>
                     </td>
                   </tr>
@@ -194,7 +190,7 @@ export default function ConfiguracoesPage() {
               <tfoot className="bg-slate-50">
                 <tr>
                   <td className="td font-semibold" colSpan={2}>
-                    Total
+                    {t.settings.thTotal}
                   </td>
                   <td
                     className={`td num text-right font-semibold ${
@@ -211,23 +207,15 @@ export default function ConfiguracoesPage() {
             </table>
           </div>
 
-          <p className="mt-3 text-xs text-slate-500">
-            Sócio com distribuição registrada não é excluído, só inativado — apagar
-            levaria embora o histórico de quem recebeu o quê.
-          </p>
+          <p className="mt-3 text-xs text-slate-500">{t.settings.sociosNota1}</p>
           <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-500">
             <Mail size={13} className="mt-0.5 shrink-0 text-slate-400" />
-            <span>
-              O e-mail é a identidade de login: só endereços listados aqui, em
-              sócios ativos, recebem link de acesso. Ao trocar um endereço, o
-              anterior perde o acesso imediatamente — sessões abertas caem e links
-              já enviados param de valer.
-            </span>
+            <span>{t.settings.sociosNota2}</span>
           </p>
         </Secao>
 
         {/* ---- Clientes ---- */}
-        <Secao titulo="Clientes">
+        <Secao titulo={t.settings.secClientes}>
           <form
             ref={formCliente}
             onSubmit={(e) => {
@@ -241,31 +229,29 @@ export default function ConfiguracoesPage() {
             className="mb-5 flex flex-wrap items-end gap-3 rounded-lg bg-slate-50 p-4"
           >
             <div className="min-w-[240px] flex-1">
-              <label className="label">Nome do cliente</label>
-              <input name="nome" required className="input" placeholder="ACME Ltda" />
+              <label className="label">{t.settings.fNomeCliente}</label>
+              <input name="nome" required className="input" placeholder={t.settings.phCliente} />
             </div>
             <button disabled={acao.pendente} className="btn-teal">
-              <Building2 size={15} /> Adicionar
+              <Building2 size={15} /> {t.common.add}
             </button>
           </form>
 
           {dados.clientes.length === 0 ? (
             <p className="py-6 text-center text-sm text-slate-500">
-              Nenhum cliente cadastrado. Eles aparecem no seletor ao lançar uma
-              receita, e também são criados automaticamente ao importar um CSV com a
-              coluna <code>cliente</code>.
+              {t.settings.clientesVazio}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px]">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="th">Cliente</th>
-                    <th className="th text-right">Receita</th>
-                    <th className="th text-right">Impostos</th>
-                    <th className="th text-right">Despesas</th>
-                    <th className="th text-right">Margem</th>
-                    <th className="th text-right">%</th>
+                    <th className="th">{t.settings.thCliente}</th>
+                    <th className="th text-right">{t.settings.thReceita}</th>
+                    <th className="th text-right">{t.settings.thImpostos}</th>
+                    <th className="th text-right">{t.settings.thDespesas}</th>
+                    <th className="th text-right">{t.settings.thMargem}</th>
+                    <th className="th text-right">{t.settings.thPct}</th>
                     <th className="th"></th>
                   </tr>
                 </thead>
@@ -276,7 +262,7 @@ export default function ConfiguracoesPage() {
                         {c.nome}
                         {!c.ativo && (
                           <span className="badge ml-2 bg-slate-100 text-slate-500">
-                            inativo
+                            {t.settings.inativo}
                           </span>
                         )}
                       </td>
@@ -312,14 +298,14 @@ export default function ConfiguracoesPage() {
                             }
                             className="rounded px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
                           >
-                            {c.ativo ? "inativar" : "reativar"}
+                            {c.ativo ? t.settings.inativar : t.settings.reativar}
                           </button>
                           <button
                             disabled={acao.pendente}
                             onClick={() => acao.executar(() => excluirCliente(c.id))}
                             className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
                           >
-                            excluir
+                            {t.common.delete}
                           </button>
                         </div>
                       </td>
@@ -330,16 +316,11 @@ export default function ConfiguracoesPage() {
             </div>
           )}
 
-          <p className="mt-3 text-xs text-slate-500">
-            Margem = receita − impostos provisionados sobre ela − despesas vinculadas
-            ao cliente. Despesas gerais (contabilidade, escritório) não entram: não
-            pertencem a um cliente específico e ratear distorceria a comparação.
-            Cliente com lançamento é inativado em vez de excluído.
-          </p>
+          <p className="mt-3 text-xs text-slate-500">{t.settings.clientesNota}</p>
         </Secao>
 
         {/* ---- Categorias ---- */}
-        <Secao titulo="Categorias">
+        <Secao titulo={t.settings.secCategorias}>
           <form
             ref={formCategoria}
             onSubmit={(e) => {
@@ -353,18 +334,18 @@ export default function ConfiguracoesPage() {
             className="mb-5 flex flex-wrap items-end gap-3 rounded-lg bg-slate-50 p-4"
           >
             <div className="min-w-[200px] flex-1">
-              <label className="label">Nome</label>
+              <label className="label">{t.settings.fNome}</label>
               <input name="nome" required className="input" />
             </div>
             <div>
-              <label className="label">Natureza</label>
+              <label className="label">{t.settings.fNatureza}</label>
               <select name="natureza" className="input">
-                <option value="SAIDA">Despesa</option>
-                <option value="ENTRADA">Receita</option>
+                <option value="SAIDA">{t.settings.optDespesa}</option>
+                <option value="ENTRADA">{t.settings.optReceita}</option>
               </select>
             </div>
             <div>
-              <label className="label">Cor</label>
+              <label className="label">{t.settings.fCor}</label>
               <input
                 type="color"
                 name="cor"
@@ -373,7 +354,7 @@ export default function ConfiguracoesPage() {
               />
             </div>
             <button disabled={acao.pendente} className="btn-teal">
-              <Tags size={15} /> Adicionar
+              <Tags size={15} /> {t.common.add}
             </button>
           </form>
 
@@ -390,10 +371,10 @@ export default function ConfiguracoesPage() {
                   />
                   <span className="text-sm">{c.nome}</span>
                   <Tag cor={c.natureza === "ENTRADA" ? "#16a34a" : "#64748b"}>
-                    {c.natureza === "ENTRADA" ? "receita" : "despesa"}
+                    {c.natureza === "ENTRADA" ? t.settings.tagReceita : t.settings.tagDespesa}
                   </Tag>
                   {c.ehImposto && (
-                    <span className="badge bg-red-100 text-red-700">imposto</span>
+                    <span className="badge bg-red-100 text-red-700">{t.settings.tagImposto}</span>
                   )}
                 </div>
                 {!c.ehImposto && (
@@ -409,15 +390,11 @@ export default function ConfiguracoesPage() {
             ))}
           </div>
 
-          <p className="mt-3 text-xs text-slate-500">
-            A natureza decide em qual formulário a categoria aparece. A categoria
-            marcada como <strong>imposto</strong> é onde as guias de DAS são lançadas
-            — ela não pode ser excluída, e só pode existir uma.
-          </p>
+          <p className="mt-3 text-xs text-slate-500">{t.settings.categoriasNota}</p>
         </Secao>
 
         {/* ---- Regime ---- */}
-        <Secao titulo="Regime tributário">
+        <Secao titulo={t.settings.secRegime}>
           <div className="grid gap-6 lg:grid-cols-2">
             <form
               onSubmit={(e) => {
@@ -425,31 +402,27 @@ export default function ConfiguracoesPage() {
                 const fd = new FormData(e.currentTarget);
                 acao.executar(async () => {
                   await definirConfig("anexo_simples", String(fd.get("valor")));
-                  return "Anexo atualizado.";
+                  return t.settings.anexoAtualizado;
                 });
               }}
               className="flex flex-wrap items-end gap-3"
             >
               <div className="min-w-[200px] flex-1">
-                <label className="label">Anexo do Simples</label>
+                <label className="label">{t.settings.anexoDoSimples}</label>
                 <select
                   name="valor"
                   defaultValue={dados.config.anexo_simples ?? "AUTO"}
                   className="input"
                 >
-                  <option value="AUTO">Automático (pelo Fator R)</option>
-                  <option value="III">Forçar Anexo III</option>
-                  <option value="V">Forçar Anexo V</option>
+                  <option value="AUTO">{t.settings.optAuto}</option>
+                  <option value="III">{t.settings.optForcarIII}</option>
+                  <option value="V">{t.settings.optForcarV}</option>
                 </select>
               </div>
               <button disabled={acao.pendente} className="btn-ghost">
-                Salvar
+                {t.common.save}
               </button>
-              <p className="w-full text-xs text-slate-500">
-                Deixe automático a menos que seu contador determine o contrário. No
-                automático, o anexo é recalculado a cada lançamento a partir da
-                relação pró-labore ÷ receita dos últimos 12 meses.
-              </p>
+              <p className="w-full text-xs text-slate-500">{t.settings.anexoNota}</p>
             </form>
 
             <form
@@ -458,13 +431,13 @@ export default function ConfiguracoesPage() {
                 const fd = new FormData(e.currentTarget);
                 acao.executar(async () => {
                   await definirConfig("dia_vencimento_das", String(fd.get("valor")));
-                  return "Dia de vencimento atualizado.";
+                  return t.settings.diaAtualizado;
                 });
               }}
               className="flex flex-wrap items-end gap-3"
             >
               <div className="min-w-[160px] flex-1">
-                <label className="label">Dia de vencimento do DAS</label>
+                <label className="label">{t.settings.diaVencimentoDas}</label>
                 <input
                   name="valor"
                   type="number"
@@ -475,37 +448,29 @@ export default function ConfiguracoesPage() {
                 />
               </div>
               <button disabled={acao.pendente} className="btn-ghost">
-                Salvar
+                {t.common.save}
               </button>
-              <p className="w-full text-xs text-slate-500">
-                Usado para calcular o vencimento das provisões. Não ajusta para dia
-                útil.
-              </p>
+              <p className="w-full text-xs text-slate-500">{t.settings.diaNota}</p>
             </form>
           </div>
         </Secao>
 
         {/* ---- Faixas ---- */}
-        <Secao titulo="Faixas do Simples Nacional">
+        <Secao titulo={t.settings.secFaixas}>
           <div className="mb-4">
-            <Aviso tom="alerta">
-              Estes valores vieram de um seed e{" "}
-              <strong>devem ser conferidos com seu contador</strong>. Alterar uma
-              faixa muda apenas os cálculos futuros e as provisões em aberto que você
-              recalcular — guias já pagas nunca são reescritas.
-            </Aviso>
+            <Aviso tom="alerta">{t.settings.faixasAviso}</Aviso>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px]">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="th">Anexo</th>
-                  <th className="th">Faixa</th>
-                  <th className="th">RBT12</th>
+                  <th className="th">{t.settings.thAnexo}</th>
+                  <th className="th">{t.settings.thFaixa}</th>
+                  <th className="th">{t.settings.thRbt12}</th>
                   <th className="th">
                     <Percent size={12} className="mr-1 inline" />
-                    Alíquota nominal e dedução
+                    {t.settings.thAliquotaDeducao}
                   </th>
                 </tr>
               </thead>
@@ -517,9 +482,9 @@ export default function ConfiguracoesPage() {
                         {f.anexo}
                       </Tag>
                     </td>
-                    <td className="td text-slate-600">{f.faixa}ª</td>
+                    <td className="td text-slate-600">{t.settings.faixaOrdinal(f.faixa)}</td>
                     <td className="td num text-xs text-slate-500">
-                      {formatarBRL(f.limiteInferiorCentavos)} até{" "}
+                      {formatarBRL(f.limiteInferiorCentavos)} {t.settings.faixaAte}{" "}
                       {formatarBRL(f.limiteSuperiorCentavos)}
                     </td>
                     <td className="td">
@@ -533,7 +498,7 @@ export default function ConfiguracoesPage() {
                               parseBps(String(fd.get("aliquota"))),
                               parseCentavos(String(fd.get("deducao")))
                             );
-                            return `Faixa ${f.faixa} do Anexo ${f.anexo} atualizada.`;
+                            return t.settings.faixaAtualizada(f.faixa, f.anexo);
                           });
                         }}
                         className="flex items-center gap-2"
@@ -553,7 +518,7 @@ export default function ConfiguracoesPage() {
                           disabled={acao.pendente}
                           className="btn-ghost px-3 py-1 text-xs"
                         >
-                          salvar
+                          {t.common.saveShort}
                         </button>
                       </form>
                     </td>
@@ -565,25 +530,23 @@ export default function ConfiguracoesPage() {
         </Secao>
 
         {/* ---- Backup ---- */}
-        <Secao titulo="Backup">
+        <Secao titulo={t.settings.secBackup}>
           <p className="flex items-start gap-2 text-sm text-slate-600">
             <Database size={16} className="mt-0.5 shrink-0 text-slate-400" />
             <span>
-              O banco inteiro é um arquivo só:{" "}
+              {t.settings.backupTextoPre}
               <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">
                 prisma/dev.db
               </code>
-              . Backup é copiar esse arquivo com o app parado. Para backup semanal
-              com o app no ar, use{" "}
+              {t.settings.backupTextoMeio}
               <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">
                 npm run db:backup
               </code>
-              , que usa o comando seguro do SQLite.
+              {t.settings.backupTextoFim}
             </span>
           </p>
           <p className="mt-2 text-xs text-slate-500">
-            Ele está no <code>.gitignore</code> de propósito — contém dados
-            financeiros reais e não deve ir para nenhum repositório.
+            <code>.gitignore</code> {t.settings.backupGitignore}
           </p>
         </Secao>
       </div>
@@ -615,7 +578,7 @@ function CelulaEmail({
     return (
       <div className="group flex items-center gap-2">
         <span className={socio.email ? "text-slate-600" : "text-amber-600"}>
-          {socio.email ?? "sem e-mail — não consegue entrar"}
+          {socio.email ?? t.settings.semEmail}
         </span>
         <button
           onClick={() => {
@@ -623,7 +586,7 @@ function CelulaEmail({
             setEditando(true);
           }}
           className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-600 group-hover:opacity-100"
-          title="Alterar e-mail de acesso"
+          title={t.settings.alterarEmail}
         >
           <Pencil size={13} />
         </button>
@@ -647,12 +610,12 @@ function CelulaEmail({
         onChange={(e) => setValor(e.target.value)}
         onKeyDown={(e) => e.key === "Escape" && setEditando(false)}
         className="input py-1 text-sm"
-        placeholder="voce@korvantis.com"
+        placeholder={t.settings.phEmail}
       />
       <button
         disabled={pendente}
         className="rounded p-1.5 text-teal-700 hover:bg-teal-50"
-        title="Salvar"
+        title={t.common.save}
       >
         <Check size={14} />
       </button>
@@ -660,7 +623,7 @@ function CelulaEmail({
         type="button"
         onClick={() => setEditando(false)}
         className="rounded p-1.5 text-slate-400 hover:bg-slate-100"
-        title="Cancelar"
+        title={t.common.cancel}
       >
         <X size={14} />
       </button>
